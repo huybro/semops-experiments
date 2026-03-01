@@ -20,7 +20,7 @@ from retrieval import retrieve_for_claims
 # ============================================================
 # Configuration
 # ============================================================
-MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
+MODEL_NAME = "qwen/Qwen1.5-0.5B-Chat"
 DATASET_NAME = "fever"
 N_CLAIMS = 20
 K_RETRIEVAL = 3
@@ -128,7 +128,7 @@ def _capturing_completion(*args, **kwargs):
 
 _litellm.completion = _capturing_completion
 
-PZ_MODEL = Model("hosted_vllm/Qwen/Qwen2.5-1.5B-Instruct")
+PZ_MODEL = Model("hosted_vllm/qwen/Qwen1.5-0.5B-Chat")
 pz_config = QueryProcessorConfig(
     api_base=VLLM_API_BASE,
     available_models=[PZ_MODEL],

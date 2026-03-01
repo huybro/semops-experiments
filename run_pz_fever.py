@@ -22,7 +22,7 @@ from universal_prompts import install_pz_prompt_overrides
 # ============================================================
 # Configuration
 # ============================================================
-MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
+MODEL_NAME = "qwen/Qwen1.5-0.5B-Chat"
 DATASET_NAME = "fever"
 N_CLAIMS = 20
 K_RETRIEVAL = 3
@@ -42,7 +42,7 @@ _litellm.completion = _patched_completion
 print(f"[config] ✅ Patched litellm.completion with max_tokens={MAX_TOKENS}")
 
 # PZ execution config — force single vLLM model, no optimization
-PZ_MODEL = Model("hosted_vllm/Qwen/Qwen2.5-1.5B-Instruct")
+PZ_MODEL = Model("hosted_vllm/qwen/Qwen1.5-0.5B-Chat")
 pz_config = QueryProcessorConfig(
     api_base=VLLM_API_BASE,
     available_models=[PZ_MODEL],

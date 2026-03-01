@@ -136,35 +136,8 @@ def install_pz_prompt_overrides():
     import palimpzest.prompts.filter_prompts as fp
     import palimpzest.prompts.convert_prompts as cp
     from palimpzest.constants import Model
-    try:
-        from palimpzest.constants import MODEL_CARDS
-    except ImportError:
-        MODEL_CARDS = None  # newer PZ versions load model info from S3
-    from enum import Enum
 
-    # ── 1. Register Qwen2.5-1.5B-Instruct as a vLLM model ──
-    # Dynamically extend the Model enum
-    QWEN_VALUE = "hosted_vllm/Qwen/Qwen2.5-1.5B-Instruct"
-    if not any(m.value == QWEN_VALUE for m in Model):
-        # Add to the enum
-        new_member = str.__new__(Model)
-        new_member._name_ = "VLLM_QWEN2_5_1_5B_INSTRUCT"
-        new_member._value_ = QWEN_VALUE
-        Model._value2member_map_[QWEN_VALUE] = new_member
-        Model._member_map_["VLLM_QWEN2_5_1_5B_INSTRUCT"] = new_member
-        Model._member_names_.append("VLLM_QWEN2_5_1_5B_INSTRUCT")
-
-        # Add model card (if this version uses MODEL_CARDS)
-        if MODEL_CARDS is not None:
-            MODEL_CARDS[QWEN_VALUE] = {
-                "usd_per_input_token": 0.0,
-                "usd_per_output_token": 0.0,
-                "seconds_per_output_token": 0.05,
-                "overall": 35.0,
-            }
-        print(f"[universal_prompts] ✅ Registered PZ model: VLLM_QWEN2_5_1_5B_INSTRUCT")
-
-    # ── 2. Override PZ filter prompts ──
+    # ── 1. Override PZ filter prompts ──
     UNIVERSAL_SYSTEM = (
         "You are a helpful assistant for executing semantic operators.\n"
         "You will be given data and an operation description.\n"

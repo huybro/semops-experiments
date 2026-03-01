@@ -10,7 +10,7 @@ from universal_prompts import install_prompt_overrides
 # ============================================================
 # Configuration
 # ============================================================
-MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
+MODEL_NAME = "qwen/Qwen1.5-0.5B-Chat"
 DATASET_NAME = "fever"
 N_CLAIMS = 20
 K_RETRIEVAL = 3
