@@ -107,17 +107,50 @@ from universal_prompts import install_pz_prompt_overrides
 
 install_pz_prompt_overrides()
 
-# Monkey-patch litellm to capture prompts and outputs
+# Monkey-patch litellm to (1) rewrite PZ prompts to match LOTUS and (2) capture I/O
+import re
 import litellm as _litellm
 _original_completion = _litellm.completion
 
-pz_captured = []  # list of (prompt_text, output_text)
+pz_captured = []  # list of {input, output}
 
-def _capturing_completion(*args, **kwargs):
+def _rewrite_and_capture(*args, **kwargs):
+    """Intercept PZ's litellm calls: rewrite messages to match LOTUS, then capture."""
     kwargs.setdefault("max_tokens", MAX_TOKENS)
     messages = kwargs.get("messages", args[1] if len(args) > 1 else [])
+
+    # --- Extract claim and content from PZ's messages ---
+    # PZ puts them in a CONTEXT JSON block like:
+    #   { "claim": "...", "content": "..." }
+    claim_val = None
+    content_val = None
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        text = msg.get("content", "")
+        # Look for "claim": "..." and "content": "..." in the message
+        claim_match = re.search(r'"claim":\s*"(.*?)"', text, re.DOTALL)
+        content_match = re.search(r'"content":\s*"(.*?)"', text, re.DOTALL)
+        if claim_match and content_match:
+            claim_val = claim_match.group(1)
+            content_val = content_match.group(1)
+            break
+
+    if claim_val and content_val:
+        # Rebuild using the exact same prompt as LOTUS
+        data_text = (
+            f"{content_val}\n"
+            f"Based on the above evidence, the following claim is supported: {claim_val}"
+        )
+        new_messages = get_prompt(data_text, data_text, op='sem_filter')
+        kwargs["messages"] = new_messages
+        if len(args) > 1:
+            args = (args[0],) + (new_messages,) + args[2:]
+
+    # Capture the final prompt text
+    final_msgs = kwargs.get("messages", messages)
     prompt_text = "\n".join(
-        m.get("content", "") for m in messages if isinstance(m, dict)
+        m.get("content", "") for m in final_msgs if isinstance(m, dict)
     )
 
     result = _original_completion(*args, **kwargs)
@@ -126,7 +159,7 @@ def _capturing_completion(*args, **kwargs):
     pz_captured.append({"input": prompt_text, "output": output_text})
     return result
 
-_litellm.completion = _capturing_completion
+_litellm.completion = _rewrite_and_capture
 
 PZ_MODEL = Model("hosted_vllm/qwen/Qwen1.5-0.5B-Chat")
 PZ_MODEL.api_base = VLLM_API_BASE  # cluster PZ requires api_base on Model instance

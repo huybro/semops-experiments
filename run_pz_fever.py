@@ -32,14 +32,45 @@ VLLM_API_BASE = "http://localhost:8000/v1"
 # Install universal prompt overrides for PZ (registers model + patches prompts)
 install_pz_prompt_overrides()
 
-# Monkey-patch PZ's Generator to inject max_tokens into litellm calls
+# Monkey-patch litellm to rewrite PZ prompts to match LOTUS format + inject max_tokens
+import re
 import litellm as _litellm
+from universal_prompts import get_prompt
 _original_completion = _litellm.completion
-def _patched_completion(*args, **kwargs):
+
+def _rewrite_pz_completion(*args, **kwargs):
+    """Intercept PZ's litellm calls: rewrite messages to match LOTUS format."""
     kwargs.setdefault("max_tokens", MAX_TOKENS)
+    messages = kwargs.get("messages", args[1] if len(args) > 1 else [])
+
+    # Extract claim and content from PZ's JSON context
+    claim_val = None
+    content_val = None
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        text = msg.get("content", "")
+        claim_match = re.search(r'"claim":\s*"(.*?)"', text, re.DOTALL)
+        content_match = re.search(r'"content":\s*"(.*?)"', text, re.DOTALL)
+        if claim_match and content_match:
+            claim_val = claim_match.group(1)
+            content_val = content_match.group(1)
+            break
+
+    if claim_val and content_val:
+        data_text = (
+            f"{content_val}\n"
+            f"Based on the above evidence, the following claim is supported: {claim_val}"
+        )
+        new_messages = get_prompt(data_text, data_text, op='sem_filter')
+        kwargs["messages"] = new_messages
+        if len(args) > 1:
+            args = (args[0],) + (new_messages,) + args[2:]
+
     return _original_completion(*args, **kwargs)
-_litellm.completion = _patched_completion
-print(f"[config] ✅ Patched litellm.completion with max_tokens={MAX_TOKENS}")
+
+_litellm.completion = _rewrite_pz_completion
+print(f"[config] ✅ Patched litellm.completion: rewrite prompts + max_tokens={MAX_TOKENS}")
 
 # PZ execution config — force single vLLM model, no optimization
 PZ_MODEL = Model("hosted_vllm/qwen/Qwen1.5-0.5B-Chat")
