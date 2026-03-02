@@ -1,17 +1,11 @@
 """
 Side-by-side comparison of LOTUS vs Palimpzest FEVER experiments.
 
-Runs all 4 pipelines on both systems with identical data, prompts, and model.
+Both systems use the professor's get_prompt() format:
+  - LOTUS is monkey-patched via install_prompt_overrides()
+  - PZ is intercepted at litellm.completion and rewritten
+
 Outputs one CSV per pipeline to logs/.
-
-Pipelines:
-  1. filter          — single filter on pre-retrieved evidence
-  2. filter_filter   — relevance filter → support filter
-  3. map             — direct LLM verdict (no retrieval)
-  4. map_filter      — generate search query → retrieve → filter
-
-Each CSV has columns showing the exact prompt sent and raw LLM output
-received by each system, for every data tuple.
 """
 import os
 import re
@@ -29,6 +23,7 @@ from data_loader import load_fever_claims, load_oracle_wiki_kb
 from retrieval import retrieve_for_claims
 from universal_prompts import (
     get_prompt,
+    lotus_df2text_row,
     install_prompt_overrides,
     install_pz_prompt_overrides,
 )
@@ -44,30 +39,37 @@ MAX_TOKENS = 512
 VLLM_API_BASE = "http://localhost:8000/v1"
 
 # ============================================================
-# Universal litellm interceptor (captures LOTUS + rewrites PZ)
+# Setup — LOTUS (monkey-patch to use get_prompt)
+# ============================================================
+install_prompt_overrides()
+lm = LM(model=f"hosted_vllm/{MODEL_NAME}", api_base=VLLM_API_BASE, max_tokens=MAX_TOKENS, temperature=0)
+lotus.settings.configure(lm=lm)
+
+# ============================================================
+# litellm interceptor — captures LOTUS + rewrites PZ
 # ============================================================
 import litellm as _litellm
 _original_completion = _litellm.completion
 
-captured = []          # shared list, cleared between runs
-rewrite_mode = False   # False=LOTUS (capture only), True=PZ (rewrite+capture)
+captured = []
+rewrite_mode = False   # False=LOTUS (capture only), True=PZ (rewrite using get_prompt)
+
+# Set before each PZ filter run: the raw instruction template LOTUS uses
+current_filter_instruction = None
+# Set before each PZ filter run: column names for data formatting
+current_filter_cols = None
 
 def _interceptor(*args, **kwargs):
-    """Universal litellm interceptor.
-    - Always captures prompt text + raw LLM output
-    - When rewrite_mode=True (PZ): also rewrites messages to match LOTUS
-    """
     kwargs.setdefault("max_tokens", MAX_TOKENS)
     kwargs.setdefault("temperature", 0)
     messages = kwargs.get("messages", args[1] if len(args) > 1 else [])
 
-    # --- Extract claim + content from messages ---
+    # --- Extract claim + content from PZ's messages ---
     claim_val = content_val = None
     for msg in messages:
         if not isinstance(msg, dict):
             continue
         text = msg.get("content", "")
-        # Try JSON format: "claim": "...", "content": "..."
         cm = re.search(r'"claim":\s*"(.*?)"', text, re.DOTALL)
         co = re.search(r'"content":\s*"(.*?)"', text, re.DOTALL)
         if cm and co:
@@ -78,80 +80,67 @@ def _interceptor(*args, **kwargs):
             claim_val = cm.group(1)
             break
 
+    # --- Also try to extract from LOTUS format for capture ---
     if not claim_val:
-        # Try LOTUS format: claim is after "claim is supported: ..."
         for msg in messages:
             if not isinstance(msg, dict):
                 continue
             text = msg.get("content", "")
-            lm = re.search(r'the following claim is supported:\s*(.+?)(?:\n|$)', text)
-            if lm:
-                claim_val = lm.group(1).strip()
-                # content is the text before "Based on the above evidence"
-                lc = re.search(r'"text":\s*(.+?)\nBased on', text, re.DOTALL)
-                if lc:
-                    content_val = lc.group(1).strip()
-                break
-            # Try map format: "Given the claim: ..."
-            lm2 = re.search(r'Given the claim:\s*(.+?)(?:\n|$)', text)
-            if lm2:
-                claim_val = lm2.group(1).strip()
+            m = re.search(r'\[Claim\]:\s*«(.*?)»', text, re.DOTALL)
+            if m:
+                claim_val = m.group(1)
+            m2 = re.search(r'\[Content\]:\s*«(.*?)»', text, re.DOTALL)
+            if m2:
+                content_val = m2.group(1)
+            if claim_val:
                 break
 
-    # --- PZ mode: rewrite messages to match LOTUS ---
+    # --- PZ mode: rewrite to get_prompt() format ---
     if rewrite_mode:
         rebuilt = False
 
-        if claim_val and content_val:
-            is_relevance_filter = any(
-                isinstance(m, dict) and "relevant" in m.get("content", "").lower()
-                for m in messages
+        if claim_val and content_val and current_filter_instruction:
+            # Build data in LOTUS's [Column]: «value» format
+            data = lotus_df2text_row(
+                {"content": content_val, "claim": claim_val},
+                current_filter_cols or ["content", "claim"]
             )
-            if is_relevance_filter:
-                instruction = (
-                    f"The following evidence is relevant to the claim.\n"
-                    f"Evidence: {content_val}\nClaim: {claim_val}"
-                )
-            else:
-                instruction = (
-                    f"{content_val}\n"
-                    f"Based on the above evidence, the following claim is supported: {claim_val}"
-                )
-            new_messages = get_prompt(instruction, content_val, op='sem_filter')
+            new_messages = get_prompt(current_filter_instruction, data, op='sem_filter')
             kwargs["messages"] = new_messages
             rebuilt = True
 
         elif claim_val and not content_val:
+            # Map operation
             is_verdict = any(
                 isinstance(m, dict) and "true" in m.get("content", "").lower()
                 and "false" in m.get("content", "").lower()
                 for m in messages
             )
+            data = lotus_df2text_row({"claim": claim_val}, ["claim"])
             if is_verdict:
                 instruction = (
-                    f"Given the claim: {claim_val}\n"
+                    "Given the claim: {claim}\n"
                     "Is this claim true or false based on your knowledge? "
                     "Answer with exactly TRUE or FALSE, nothing else."
                 )
             else:
                 instruction = (
-                    f"Given the claim: {claim_val}\n"
+                    "Given the claim: {claim}\n"
                     "Write a short factual search query to find evidence about this claim. "
                     "Output only the search query, nothing else."
                 )
-            new_messages = get_prompt(instruction, claim_val, op='sem_map')
+            new_messages = get_prompt(instruction, data, op='sem_map')
             kwargs["messages"] = new_messages
             rebuilt = True
 
         if rebuilt and len(args) > 1:
             args = (args[0],) + (kwargs["messages"],) + args[2:]
 
-    # --- Capture final prompt + raw output ---
+    # --- Capture ---
     final_msgs = kwargs.get("messages", messages)
     prompt_text = "\n".join(
         m.get("content", "") for m in final_msgs if isinstance(m, dict)
     )
-
     result = _original_completion(*args, **kwargs)
     output_text = result.choices[0].message.content if result.choices else ""
     captured.append({
@@ -163,13 +152,6 @@ def _interceptor(*args, **kwargs):
     return result
 
 _litellm.completion = _interceptor
-
-# ============================================================
-# Setup — LOTUS
-# ============================================================
-install_prompt_overrides()
-lm = LM(model=f"hosted_vllm/{MODEL_NAME}", api_base=VLLM_API_BASE, max_tokens=MAX_TOKENS)
-lotus.settings.configure(lm=lm)
 
 # ============================================================
 # Setup — PZ
@@ -218,7 +200,6 @@ def write_csv(filepath, rows):
 
 
 def find_match(cap_list, claim, content=None):
-    """Find captured entry matching this claim (+content for filters)."""
     claim_short = claim[:40]
     for entry in cap_list:
         if claim_short in entry.get("claim", ""):
@@ -226,12 +207,22 @@ def find_match(cap_list, claim, content=None):
                 return entry
             if content[:40] in entry.get("content", ""):
                 return entry
-    # Fallback: search in prompt text
     for entry in cap_list:
         if claim_short in entry.get("input", ""):
             if content is None or content[:40] in entry.get("input", ""):
                 return entry
     return {"input": "", "output": "", "claim": "", "content": ""}
+
+
+# Filter instructions (raw templates — {column} stays as column name reference)
+FILTER_SUPPORT = (
+    "{content}\n"
+    "Based on the above evidence, the following claim is supported: {claim}"
+)
+FILTER_RELEVANCE = (
+    "The following evidence is relevant to the claim.\n"
+    "Evidence: {content}\nClaim: {claim}"
+)
 
 
 # ============================================================
@@ -241,22 +232,19 @@ print("\n\n" + "=" * 60)
 print("  PIPELINE 1: filter")
 print("=" * 60)
 
-FILTER_INSTRUCTION = (
-    "{content}\n"
-    "Based on the above evidence, the following claim is supported: {claim}"
-)
-
 # -- LOTUS --
 rewrite_mode = False
 captured.clear()
 t0 = time.time()
-df_lotus_f = joined_df.copy().sem_filter(FILTER_INSTRUCTION)
+df_lotus_f = joined_df.copy().sem_filter(FILTER_SUPPORT)
 lotus_filter_time = time.time() - t0
 lotus_captured = list(captured)
 print(f"  LOTUS filter: {len(df_lotus_f)} passed ({lotus_filter_time:.1f}s)")
 
 # -- PZ --
 rewrite_mode = True
+current_filter_instruction = FILTER_SUPPORT
+current_filter_cols = ["content", "claim"]
 captured.clear()
 ds = pz.MemoryDataset(id="cmp-filter", vals=joined_df.to_dict("records"))
 ds = ds.sem_filter(
@@ -296,28 +284,23 @@ print("\n\n" + "=" * 60)
 print("  PIPELINE 2: filter → filter")
 print("=" * 60)
 
-FILTER1_INSTRUCTION = (
-    "The following evidence is relevant to the claim.\n"
-    "Evidence: {content}\nClaim: {claim}"
-)
-FILTER2_INSTRUCTION = FILTER_INSTRUCTION
-
 # -- LOTUS F1 --
 rewrite_mode = False
 captured.clear()
 t0 = time.time()
-df_f1 = joined_df.copy().sem_filter(FILTER1_INSTRUCTION)
+df_f1 = joined_df.copy().sem_filter(FILTER_RELEVANCE)
 lotus_f1_captured = list(captured)
 
-# -- LOTUS F2 --
 captured.clear()
-df_f2 = df_f1.sem_filter(FILTER2_INSTRUCTION)
+df_f2 = df_f1.sem_filter(FILTER_SUPPORT)
 lotus_f2_captured = list(captured)
 lotus_ff_time = time.time() - t0
 print(f"  LOTUS filter→filter: {len(df_f1)}→{len(df_f2)} passed ({lotus_ff_time:.1f}s)")
 
 # -- PZ F1 --
 rewrite_mode = True
+current_filter_instruction = FILTER_RELEVANCE
+current_filter_cols = ["content", "claim"]
 captured.clear()
 ds2 = pz.MemoryDataset(id="cmp-ff", vals=joined_df.to_dict("records"))
 ds2 = ds2.sem_filter(
@@ -330,6 +313,7 @@ pz_f1_df = pz_f1_out.to_df()
 pz_f1_captured = list(captured)
 
 # -- PZ F2 --
+current_filter_instruction = FILTER_SUPPORT
 captured.clear()
 if len(pz_f1_df) > 0:
     ds2b = pz.MemoryDataset(id="cmp-ff2", vals=pz_f1_df.to_dict("records"))
@@ -371,7 +355,7 @@ write_csv("logs/comparison_filter_filter.csv", rows)
 
 
 # ============================================================
-# Pipeline 3: map only (direct verdict, no retrieval)
+# Pipeline 3: map only
 # ============================================================
 print("\n\n" + "=" * 60)
 print("  PIPELINE 3: map only")
@@ -450,9 +434,8 @@ df_mf = claims_df.copy().sem_map(MAP_QUERY_INSTRUCTION, suffix="search_query")
 lotus_mq_captured = list(captured)
 mf_retrieved = retrieve_for_claims(df_mf, wiki_df, query_col="search_query", K=K_RETRIEVAL)
 
-# -- LOTUS filter --
 captured.clear()
-df_mf_verified = mf_retrieved.sem_filter(FILTER_INSTRUCTION)
+df_mf_verified = mf_retrieved.sem_filter(FILTER_SUPPORT)
 lotus_mf_filter_captured = list(captured)
 lotus_mf_time = time.time() - t0
 print(f"  LOTUS map→filter: map={len(df_mf)}, filter={len(df_mf_verified)} passed ({lotus_mf_time:.1f}s)")
@@ -474,12 +457,12 @@ pz_mf_map_out = ds4.run(config=pz_config, max_quality=True)
 pz_mf_map_df = pz_mf_map_out.to_df()
 pz_mq_captured = list(captured)
 
-# Retrieve using PZ-generated queries
 pz_mf_claims = claims_df.copy()
 pz_mf_claims["search_query"] = pz_mf_map_df["search_query"].tolist()[:len(pz_mf_claims)]
 pz_mf_retrieved = retrieve_for_claims(pz_mf_claims, wiki_df, query_col="search_query", K=K_RETRIEVAL)
 
-# -- PZ filter --
+current_filter_instruction = FILTER_SUPPORT
+current_filter_cols = ["content", "claim"]
 captured.clear()
 ds4f = pz.MemoryDataset(id="cmp-mf-filter", vals=pz_mf_retrieved.to_dict("records"))
 ds4f = ds4f.sem_filter(
@@ -493,7 +476,6 @@ pz_mf_time = time.time() - t0
 rewrite_mode = False
 print(f"  PZ map→filter: map={len(pz_mf_map_df)}, filter={len(pz_mf_filter_df)} passed ({pz_mf_time:.1f}s)")
 
-# -- CSV (map stage) --
 rows = []
 for i in range(len(claims_df)):
     row = claims_df.iloc[i]

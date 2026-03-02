@@ -99,18 +99,24 @@ def get_prompt(instruction, data, data2=None, op='sem_filter'):
     return messages
 
 
+def lotus_df2text_row(row_dict, cols):
+    """Replicate LOTUS's df2text format: [Column]: «value» for each column."""
+    return "".join(f"[{col.capitalize()}]: «{row_dict[col]}»\n" for col in cols)
+
+
 def install_prompt_overrides():
     """Monkey-patch LOTUS's filter_formatter and map_formatter to use get_prompt().
 
-    IMPORTANT: We patch lotus.templates.task_instructions (where the real functions live),
-    NOT lotus.sem_ops.sem_filter (which just imports from task_instructions).
+    IMPORTANT: We patch lotus.templates.task_instructions (where the real
+    filter_formatter/map_formatter live and are called from sem_filter/sem_map).
     """
     import lotus.templates.task_instructions as task_instr
 
     def custom_filter_formatter(model, multimodal_data, user_instruction, *args, **kwargs):
-        """Replacement filter_formatter matching LOTUS's real signature."""
-        # multimodal_data is a dict like {"text": "...", ...}
-        # user_instruction is the filter condition with {columns} filled
+        """Replacement filter_formatter matching LOTUS's real signature.
+        - multimodal_data: dict with "text" key (serialized row data)
+        - user_instruction: raw instruction template (e.g., "{content}\n...")
+        """
         if isinstance(multimodal_data, dict):
             data = multimodal_data.get("text", str(multimodal_data))
         else:
