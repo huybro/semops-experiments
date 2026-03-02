@@ -28,6 +28,11 @@ from universal_prompts import (
     install_pz_prompt_overrides,
 )
 
+def nle2str(nle, cols):
+    """Replicate LOTUS's nle2str: replace {col} with col.capitalize()."""
+    d = {col: col.capitalize() for col in cols}
+    return nle.format(**d)
+
 # ============================================================
 # Configuration
 # ============================================================
@@ -101,11 +106,14 @@ def _interceptor(*args, **kwargs):
 
         if claim_val and content_val and current_filter_instruction:
             # Build data in LOTUS's [Column]: «value» format
+            cols = current_filter_cols or ["content", "claim"]
             data = lotus_df2text_row(
                 {"content": content_val, "claim": claim_val},
-                current_filter_cols or ["content", "claim"]
+                cols
             )
-            new_messages = get_prompt(current_filter_instruction, data, op='sem_filter')
+            # Apply nle2str: {content} → Content, {claim} → Claim
+            formatted_instr = nle2str(current_filter_instruction, cols)
+            new_messages = get_prompt(formatted_instr, data, op='sem_filter')
             kwargs["messages"] = new_messages
             rebuilt = True
 
@@ -129,7 +137,8 @@ def _interceptor(*args, **kwargs):
                     "Write a short factual search query to find evidence about this claim. "
                     "Output only the search query, nothing else."
                 )
-            new_messages = get_prompt(instruction, data, op='sem_map')
+            formatted_instr = nle2str(instruction, ["claim"])
+            new_messages = get_prompt(formatted_instr, data, op='sem_map')
             kwargs["messages"] = new_messages
             rebuilt = True
 
