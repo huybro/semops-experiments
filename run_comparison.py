@@ -129,6 +129,7 @@ def _capturing_completion(*args, **kwargs):
 _litellm.completion = _capturing_completion
 
 PZ_MODEL = Model("hosted_vllm/qwen/Qwen1.5-0.5B-Chat")
+PZ_MODEL.api_base = VLLM_API_BASE  # cluster PZ requires api_base on Model instance
 pz_config = QueryProcessorConfig(
     api_base=VLLM_API_BASE,
     available_models=[PZ_MODEL],

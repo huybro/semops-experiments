@@ -43,6 +43,7 @@ print(f"[config] ✅ Patched litellm.completion with max_tokens={MAX_TOKENS}")
 
 # PZ execution config — force single vLLM model, no optimization
 PZ_MODEL = Model("hosted_vllm/qwen/Qwen1.5-0.5B-Chat")
+PZ_MODEL.api_base = VLLM_API_BASE  # cluster PZ requires api_base on Model instance
 pz_config = QueryProcessorConfig(
     api_base=VLLM_API_BASE,
     available_models=[PZ_MODEL],
