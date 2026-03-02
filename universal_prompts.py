@@ -137,6 +137,16 @@ def install_pz_prompt_overrides():
     import palimpzest.prompts.convert_prompts as cp
     from palimpzest.constants import Model
 
+    # Fix: cluster PZ version's is_vllm_model() returns False for vLLM models.
+    # Monkey-patch it to check the value string instead.
+    _original_is_vllm = Model.is_vllm_model
+    def _patched_is_vllm(self):
+        if hasattr(self, 'value') and 'hosted_vllm' in str(self.value):
+            return True
+        return _original_is_vllm(self)
+    Model.is_vllm_model = _patched_is_vllm
+    print("[universal_prompts] ✅ Patched Model.is_vllm_model()")
+
     # ── 1. Override PZ filter prompts ──
     UNIVERSAL_SYSTEM = (
         "You are a helpful assistant for executing semantic operators.\n"
