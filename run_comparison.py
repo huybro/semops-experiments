@@ -58,6 +58,7 @@ def _interceptor(*args, **kwargs):
     - When rewrite_mode=True (PZ): also rewrites messages to match LOTUS
     """
     kwargs.setdefault("max_tokens", MAX_TOKENS)
+    kwargs.setdefault("temperature", 0)
     messages = kwargs.get("messages", args[1] if len(args) > 1 else [])
 
     # --- Extract claim + content from messages ---
@@ -116,7 +117,7 @@ def _interceptor(*args, **kwargs):
                     f"{content_val}\n"
                     f"Based on the above evidence, the following claim is supported: {claim_val}"
                 )
-            new_messages = get_prompt(instruction, instruction, op='sem_filter')
+            new_messages = get_prompt(instruction, content_val, op='sem_filter')
             kwargs["messages"] = new_messages
             rebuilt = True
 

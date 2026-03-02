@@ -100,21 +100,35 @@ def get_prompt(instruction, data, data2=None, op='sem_filter'):
 
 
 def install_prompt_overrides():
-    """Monkey-patch LOTUS's filter_formatter and map_formatter to use get_prompt()."""
+    """Monkey-patch LOTUS's filter_formatter and map_formatter to use get_prompt().
 
-    import lotus.sem_ops.sem_filter as sem_filter_mod
-    import lotus.sem_ops.sem_map as sem_map_mod
+    IMPORTANT: We patch lotus.templates.task_instructions (where the real functions live),
+    NOT lotus.sem_ops.sem_filter (which just imports from task_instructions).
+    """
+    import lotus.templates.task_instructions as task_instr
 
-    def custom_filter_formatter(data, instruction):
-        return get_prompt(instruction, data, op='sem_filter')
+    def custom_filter_formatter(model, multimodal_data, user_instruction, *args, **kwargs):
+        """Replacement filter_formatter matching LOTUS's real signature."""
+        # multimodal_data is a dict like {"text": "...", ...}
+        # user_instruction is the filter condition with {columns} filled
+        if isinstance(multimodal_data, dict):
+            data = multimodal_data.get("text", str(multimodal_data))
+        else:
+            data = str(multimodal_data)
+        return get_prompt(user_instruction, data, op='sem_filter')
 
-    def custom_map_formatter(data, instruction):
-        return get_prompt(instruction, data, op='sem_map')
+    def custom_map_formatter(model, multimodal_data, user_instruction, *args, **kwargs):
+        """Replacement map_formatter matching LOTUS's real signature."""
+        if isinstance(multimodal_data, dict):
+            data = multimodal_data.get("text", str(multimodal_data))
+        else:
+            data = str(multimodal_data)
+        return get_prompt(user_instruction, data, op='sem_map')
 
-    sem_filter_mod.filter_formatter = custom_filter_formatter
-    sem_map_mod.map_formatter = custom_map_formatter
+    task_instr.filter_formatter = custom_filter_formatter
+    task_instr.map_formatter = custom_map_formatter
 
-    print("[universal_prompts] ✅ Installed prompt overrides for: filter, map")
+    print("[universal_prompts] ✅ Installed prompt overrides on task_instructions: filter, map")
 
 
 def install_pz_prompt_overrides():
