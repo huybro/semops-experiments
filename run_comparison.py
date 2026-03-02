@@ -143,7 +143,12 @@ def _rewrite_and_capture(*args, **kwargs):
 
     result = _original_completion(*args, **kwargs)
     output_text = result.choices[0].message.content if result.choices else ""
-    pz_captured.append({"input": prompt_text, "output": output_text})
+    pz_captured.append({
+        "input": prompt_text,
+        "output": output_text,
+        "claim": claim_val or "",
+        "content": content_val or "",
+    })
     return result
 
 _litellm.completion = _rewrite_and_capture
@@ -200,6 +205,25 @@ def capture_lotus_prompts(df, instruction, op='sem_filter'):
     return prompts
 
 
+def find_pz_match(pz_list, claim, content=None):
+    """Find the PZ captured entry matching this row's claim (and content if filter).
+    Returns {"input": ..., "output": ...} or empty dict."""
+    claim_short = claim[:40]  # match on first 40 chars to avoid escaping issues
+    for entry in pz_list:
+        if claim_short in entry.get("claim", ""):
+            if content is None:
+                return entry
+            content_short = content[:40]
+            if content_short in entry.get("content", ""):
+                return entry
+    # Fallback: search in prompt text
+    for entry in pz_list:
+        if claim_short in entry.get("input", ""):
+            if content is None or (content and content[:40] in entry.get("input", "")):
+                return entry
+    return {"input": "", "output": ""}
+
+
 # ============================================================
 # Pipeline 1: filter only
 # ============================================================
@@ -236,14 +260,16 @@ print(f"  PZ filter: {len(pz_df)} passed ({pz_filter_time:.1f}s)")
 # -- CSV --
 rows = []
 for i in range(len(joined_df)):
+    row = joined_df.iloc[i]
+    pz_match = find_pz_match(pz_captured, row["claim"], row["content"])
     rows.append({
         "tuple": i,
-        "claim": joined_df.iloc[i]["claim"][:80],
-        "evidence": joined_df.iloc[i]["content"][:80],
+        "claim": row["claim"][:80],
+        "evidence": row["content"][:80],
         "lotus_input": lotus_filter_prompts[i] if i < len(lotus_filter_prompts) else "",
         "lotus_output": "PASS" if i in lotus_filter_passed else "FAIL",
-        "pz_input": pz_captured[i]["input"] if i < len(pz_captured) else "",
-        "pz_output": pz_captured[i]["output"] if i < len(pz_captured) else "",
+        "pz_input": pz_match["input"],
+        "pz_output": pz_match["output"],
     })
 write_csv("logs/comparison_filter.csv", rows)
 
@@ -302,18 +328,20 @@ print(f"  PZ filter→filter: {len(pz_f1_df)}→{len(pz_f2_df)} passed ({pz_ff_t
 # -- CSV --
 rows = []
 for i in range(len(joined_df)):
+    row = joined_df.iloc[i]
+    pz_f1_match = find_pz_match(pz_f1_captured, row["claim"], row["content"])
+    pz_f2_match = find_pz_match(pz_f2_captured, row["claim"], row["content"])
     rows.append({
         "tuple": i,
-        "claim": joined_df.iloc[i]["claim"][:80],
-        "evidence": joined_df.iloc[i]["content"][:80],
+        "claim": row["claim"][:80],
+        "evidence": row["content"][:80],
         "lotus_f1_input": lotus_f1_prompts[i] if i < len(lotus_f1_prompts) else "",
         "lotus_f1_output": "PASS" if i in lotus_f1_passed else "FAIL",
-        "pz_f1_input": pz_f1_captured[i]["input"] if i < len(pz_f1_captured) else "",
-        "pz_f1_output": pz_f1_captured[i]["output"] if i < len(pz_f1_captured) else "",
-        "lotus_f2_input": lotus_f2_prompts[i - min(lotus_f1_passed)] if i in lotus_f1_passed and (i - min(lotus_f1_passed)) < len(lotus_f2_prompts) else "SKIPPED",
+        "pz_f1_input": pz_f1_match["input"],
+        "pz_f1_output": pz_f1_match["output"],
         "lotus_f2_output": "PASS" if i in lotus_f2_passed else ("FAIL" if i in lotus_f1_passed else "SKIPPED"),
-        "pz_f2_input": "",  # F2 only runs on F1-passed tuples; hard to align
-        "pz_f2_output": "",
+        "pz_f2_input": pz_f2_match["input"],
+        "pz_f2_output": pz_f2_match["output"],
     })
 write_csv("logs/comparison_filter_filter.csv", rows)
 
@@ -358,13 +386,15 @@ print(f"  PZ map: {len(pz_map_df)} rows ({pz_map_time:.1f}s)")
 # -- CSV --
 rows = []
 for i in range(len(claims_df)):
+    row = claims_df.iloc[i]
+    pz_match = find_pz_match(pz_captured, row["claim"])
     rows.append({
         "tuple": i,
-        "claim": claims_df.iloc[i]["claim"][:80],
+        "claim": row["claim"][:80],
         "lotus_input": lotus_map_prompts[i] if i < len(lotus_map_prompts) else "",
         "lotus_output": df_map.iloc[i]["verdict"] if i < len(df_map) else "",
-        "pz_input": pz_captured[i]["input"] if i < len(pz_captured) else "",
-        "pz_output": pz_captured[i]["output"] if i < len(pz_captured) else "",
+        "pz_input": pz_match["input"],
+        "pz_output": pz_match["output"],
     })
 write_csv("logs/comparison_map.csv", rows)
 
@@ -429,13 +459,15 @@ print(f"  PZ map→filter: map={len(pz_mf_map_df)}, filter={len(pz_mf_filter_df)
 # -- CSV (map stage) --
 rows = []
 for i in range(len(claims_df)):
+    row = claims_df.iloc[i]
+    pz_match = find_pz_match(pz_map_captured, row["claim"])
     rows.append({
         "tuple": i,
-        "claim": claims_df.iloc[i]["claim"][:80],
+        "claim": row["claim"][:80],
         "lotus_map_input": lotus_mq_prompts[i] if i < len(lotus_mq_prompts) else "",
         "lotus_map_output": df_mf.iloc[i]["search_query"] if i < len(df_mf) else "",
-        "pz_map_input": pz_map_captured[i]["input"] if i < len(pz_map_captured) else "",
-        "pz_map_output": pz_map_captured[i]["output"] if i < len(pz_map_captured) else "",
+        "pz_map_input": pz_match["input"],
+        "pz_map_output": pz_match["output"],
     })
 write_csv("logs/comparison_map_filter.csv", rows)
 
