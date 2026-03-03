@@ -1,12 +1,3 @@
-"""
-Universal prompt construction for LOTUS and Palimpzest FEVER experiments.
-
-Provides:
-  - get_prompt(): builds standardized prompts for sem_filter, sem_map, etc.
-  - install_prompt_overrides(): patches LOTUS to use get_prompt()
-  - install_pz_prompt_overrides(): patches PZ's Model.is_vllm_model()
-"""
-
 import json
 
 
@@ -106,9 +97,6 @@ def lotus_df2text_row(row_dict, cols):
 
 def install_prompt_overrides():
     """Monkey-patch LOTUS's filter_formatter and map_formatter to use get_prompt().
-
-    IMPORTANT: We patch lotus.templates.task_instructions (where the real
-    filter_formatter/map_formatter live and are called from sem_filter/sem_map).
     """
     import lotus.templates.task_instructions as task_instr
 
@@ -134,18 +122,9 @@ def install_prompt_overrides():
     task_instr.filter_formatter = custom_filter_formatter
     task_instr.map_formatter = custom_map_formatter
 
-    print("[universal_prompts] ✅ Installed prompt overrides on task_instructions: filter, map")
-
 
 def install_pz_prompt_overrides():
-    """
-    Patch Palimpzest for compatibility with our vLLM setup.
 
-    Fixes Model.is_vllm_model() which returns False on the cluster version.
-    Note: Prompt rewriting is done at the litellm.completion level in
-    run_comparison.py, not here, because the cluster's PZ version ignores
-    module-level prompt template changes.
-    """
     from palimpzest.constants import Model
 
     _original_is_vllm = Model.is_vllm_model
@@ -154,4 +133,3 @@ def install_pz_prompt_overrides():
             return True
         return _original_is_vllm(self)
     Model.is_vllm_model = _patched_is_vllm
-    print("[universal_prompts] ✅ Patched Model.is_vllm_model()")
