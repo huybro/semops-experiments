@@ -289,18 +289,6 @@ def write_csv(filepath, rows):
         writer.writerows(rows)
 
 
-def find_match(cap_list, claim, content=None):
-    claim_short = claim[:40]
-    for entry in cap_list:
-        if claim_short in entry.get("claim", ""):
-            if content is None or content[:40] in entry.get("content", ""):
-                return entry
-    for entry in cap_list:
-        if claim_short in entry.get("input", ""):
-            if content is None or content[:40] in entry.get("input", ""):
-                return entry
-    return {"input": "", "output": "", "claim": "", "content": ""}
-
 
 def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
     """Run PZ sem_map, falling back to direct LLM calls if optimizer crashes."""
