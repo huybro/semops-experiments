@@ -135,6 +135,7 @@ def install_pz_prompt_overrides():
             self.model_id = value
             self.model_name = value
             self.api_base = None
+            self.vllm_kwargs = {}
             self.model_specs = {
                 "provider": "hosted_vllm",
                 "is_vllm_model": True,
