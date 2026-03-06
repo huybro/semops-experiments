@@ -19,6 +19,7 @@ import os
 import re
 import csv
 import json
+import unicodedata
 import time
 
 import lotus
@@ -119,9 +120,17 @@ def _unescape_json_str(s):
         return s
 
 
+def _normalize_text(s):
+    """Normalize unicode representation for consistent comparison."""
+    if not s:
+        return s
+    return unicodedata.normalize('NFC', s)
+
+
 def _interceptor(*args, **kwargs):
     kwargs.setdefault("max_tokens", MAX_TOKENS)
     kwargs.setdefault("temperature", 0)
+    kwargs.setdefault("seed", 42)
     messages = kwargs.get("messages", args[1] if len(args) > 1 else [])
 
     claim_val = content_val = None
@@ -161,8 +170,8 @@ def _interceptor(*args, **kwargs):
     # PZ mode: unescape JSON strings and rewrite messages
     if state.rewrite_mode:
         if _from_pz_json:
-            claim_val = _unescape_json_str(claim_val)
-            content_val = _unescape_json_str(content_val)
+            claim_val = _normalize_text(_unescape_json_str(claim_val))
+            content_val = _normalize_text(_unescape_json_str(content_val))
         rebuilt = False
 
         if claim_val and content_val and state.current_filter_instruction:
