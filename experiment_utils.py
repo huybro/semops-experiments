@@ -18,6 +18,7 @@ Usage:
 import os
 import re
 import csv
+import json
 import time
 
 import lotus
@@ -108,12 +109,23 @@ lotus.settings.configure(lm=_lotus_lm)
 _original_completion = _litellm.completion
 
 
+def _unescape_json_str(s):
+    """Unescape JSON string sequences (\\t → tab, \\uXXXX → unicode, etc.)."""
+    if not s:
+        return s
+    try:
+        return json.loads('"' + s + '"')
+    except (json.JSONDecodeError, ValueError):
+        return s
+
+
 def _interceptor(*args, **kwargs):
     kwargs.setdefault("max_tokens", MAX_TOKENS)
     kwargs.setdefault("temperature", 0)
     messages = kwargs.get("messages", args[1] if len(args) > 1 else [])
 
     claim_val = content_val = None
+    _from_pz_json = False
 
     # Try PZ JSON format
     for msg in messages:
@@ -124,9 +136,11 @@ def _interceptor(*args, **kwargs):
         co = re.search(r'"content":\s*"(.*?)"', text, re.DOTALL)
         if cm and co:
             claim_val, content_val = cm.group(1), co.group(1)
+            _from_pz_json = True
             break
         elif cm:
             claim_val = cm.group(1)
+            _from_pz_json = True
             break
 
     # Try LOTUS format
@@ -144,8 +158,11 @@ def _interceptor(*args, **kwargs):
             if claim_val:
                 break
 
-    # PZ mode: rewrite messages
+    # PZ mode: unescape JSON strings and rewrite messages
     if state.rewrite_mode:
+        if _from_pz_json:
+            claim_val = _unescape_json_str(claim_val)
+            content_val = _unescape_json_str(content_val)
         rebuilt = False
 
         if claim_val and content_val and state.current_filter_instruction:
