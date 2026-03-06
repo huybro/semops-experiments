@@ -29,11 +29,11 @@ def nle2str(nle, cols):
 # ============================================================
 # Configuration
 # ============================================================
-MODEL_NAME = "qwen/Qwen1.5-0.5B-Chat"
+MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 N_CLAIMS = 20
-K_RETRIEVAL = 3
+K_RETRIEVAL = 1
 MAX_TOKENS = 512
-VLLM_API_BASE = "http://localhost:8000/v1"
+VLLM_API_BASE = "http://localhost:8003/v1"
 
 # Instruction templates — {column} stays as column name reference
 FILTER_SUPPORT = (
@@ -181,7 +181,6 @@ wiki_df = load_oracle_wiki_kb(claims_split="labelled_dev", n_claims=N_CLAIMS)
 claims_df["true_label"] = claims_df["label"].apply(lambda l: l == "SUPPORTS")
 
 joined_df = retrieve_for_claims(claims_df, wiki_df, query_col="claim", K=K_RETRIEVAL)
-
 os.makedirs("logs", exist_ok=True)
 
 

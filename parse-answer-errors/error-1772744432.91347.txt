@@ -1,0 +1,11 @@
+hosted_vllm/qwen/Qwen1.5-0.5B-Chat
+#####
+PromptStrategy.FILTER
+#####
+Claim: Savages
+Filter Condition: "German"
+#####
+{'passed_operator': FieldInfo(annotation=bool, required=True, description='Whether the record passed the filter operation')}
+#####
+Could not parse answer from completion text: Claim: Savages
+Filter Condition: "German"

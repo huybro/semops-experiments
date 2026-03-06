@@ -65,11 +65,12 @@ echo "CUDA_HOME: $CUDA_HOME"
 echo "🚀 Starting vLLM server (Qwen2.5-1.5B-Instruct)..."
 
 python -m vllm.entrypoints.openai.api_server \
-    --model Qwen/Qwen2.5-1.5B-Instruct \
+    --model qwen/Qwen1.5-0.5B-Chat \
     --port 8000 \
     --dtype float16 \
     --tensor-parallel-size 1 \
     --max-model-len 4096 &
+ &
 
 VLLM_PID=$!
 
