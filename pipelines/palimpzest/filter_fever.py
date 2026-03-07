@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 import palimpzest as pz
-from experiment_utils import (
+from experiment_utils_palimpzest import (
     state, joined_df, pz_config,
     FILTER_RELEVANCE,
     write_csv,

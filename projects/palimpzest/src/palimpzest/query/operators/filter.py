@@ -7,6 +7,7 @@ from typing import Any
 from pydantic.fields import FieldInfo
 
 from palimpzest.constants import (
+    MODEL_CARDS,
     NAIVE_EST_FILTER_SELECTIVITY,
     NAIVE_EST_NUM_INPUT_TOKENS,
     Cardinality,
@@ -86,13 +87,12 @@ class FilterOp(PhysicalOperator, ABC):
             cost_per_record=generation_stats.cost_per_record,
             model_name=self.get_model_name(),
             filter_str=self.filter_obj.get_filter_str(),
-            input_text_tokens=generation_stats.input_text_tokens,
-            input_audio_tokens=generation_stats.input_audio_tokens,
-            input_image_tokens=generation_stats.input_image_tokens,
-            cache_read_tokens=generation_stats.cache_read_tokens,
-            cache_creation_tokens=generation_stats.cache_creation_tokens,
-            output_text_tokens=generation_stats.output_text_tokens,
-            embedding_input_tokens=generation_stats.embedding_input_tokens,
+            total_input_tokens=generation_stats.total_input_tokens,
+            total_output_tokens=generation_stats.total_output_tokens,
+            total_embedding_input_tokens=generation_stats.total_embedding_input_tokens,
+            total_input_cost=generation_stats.total_input_cost,
+            total_output_cost=generation_stats.total_output_cost,
+            total_embedding_cost=generation_stats.total_embedding_cost,
             llm_call_duration_secs=generation_stats.llm_call_duration_secs,
             fn_call_duration_secs=generation_stats.fn_call_duration_secs,
             total_llm_calls=generation_stats.total_llm_calls,
@@ -167,7 +167,7 @@ class LLMFilter(FilterOp):
         self,
         model: Model,
         prompt_strategy: PromptStrategy = PromptStrategy.FILTER,
-        reasoning_effort: str = "default",
+        reasoning_effort: str | None = None,
         *args,
         **kwargs,
     ):
@@ -176,7 +176,7 @@ class LLMFilter(FilterOp):
         self.prompt_strategy = prompt_strategy
         self.reasoning_effort = reasoning_effort
         if model is not None:
-            self.generator = Generator(model, prompt_strategy, reasoning_effort, Cardinality.ONE_TO_ONE, self.desc, self.verbose)
+            self.generator = Generator(model, prompt_strategy, reasoning_effort, self.api_base, Cardinality.ONE_TO_ONE, self.desc, self.verbose)
 
     def get_id_params(self):
         id_params = super().get_id_params()
@@ -216,18 +216,18 @@ class LLMFilter(FilterOp):
 
         # get est. of conversion time per record from model card;
         model_conversion_time_per_record = (
-            self.model.get_seconds_per_output_token() * est_num_output_tokens
+            MODEL_CARDS[self.model.value]["seconds_per_output_token"] * est_num_output_tokens
         )
 
         # get est. of conversion cost (in USD) per record from model card
         usd_per_input_token = (
-            self.model.get_usd_per_audio_input_token()
+            MODEL_CARDS[self.model.value]["usd_per_audio_input_token"]
             if self.is_audio_op()
-            else self.model.get_usd_per_input_token()
+            else MODEL_CARDS[self.model.value]["usd_per_input_token"]
         )
         model_conversion_usd_per_record = (
             usd_per_input_token * est_num_input_tokens
-            + self.model.get_usd_per_output_token() * est_num_output_tokens
+            + MODEL_CARDS[self.model.value]["usd_per_output_token"] * est_num_output_tokens
         )
 
         # estimate output cardinality using a constant assumption of the filter selectivity
@@ -235,7 +235,7 @@ class LLMFilter(FilterOp):
         cardinality = selectivity * source_op_cost_estimates.cardinality
 
         # estimate quality of output based on the strength of the model being used
-        quality = (self.model.get_overall_score() / 100.0)
+        quality = (MODEL_CARDS[self.model.value]["overall"] / 100.0)
 
         return OperatorCostEstimates(
             cardinality=cardinality,
@@ -254,5 +254,12 @@ class LLMFilter(FilterOp):
         # generate output; NOTE: FieldInfo is used to indicate the output type; thus, the desc is not needed
         fields = {"passed_operator": FieldInfo(annotation=bool, description="Whether the record passed the filter operation")}
         field_answers, _, generation_stats, _ = self.generator(candidate, fields, **gen_kwargs)
-
+        # if int(candidate.filename.split('_')[0]) % 4 == 0:
+        #     field_answers['passed_operator'] = True
+        # elif int(candidate.filename.split('_')[0]) % 4 == 1:
+        #     field_answers['passed_operator'] = True
+        # elif int(candidate.filename.split('_')[0]) % 4 == 2:
+        #     field_answers['passed_operator'] = True
+        # else:
+        #     field_answers['passed_operator'] = False
         return field_answers, generation_stats

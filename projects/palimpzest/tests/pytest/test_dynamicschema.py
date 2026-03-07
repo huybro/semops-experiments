@@ -1,6 +1,4 @@
 """This testing class tests whether we can run a workload by defining a schema dynamically."""
-from pathlib import Path
-
 from palimpzest.constants import Model
 from palimpzest.core.lib.schemas import TextFile
 from palimpzest.policy import MinCost
@@ -9,23 +7,20 @@ from palimpzest.query.operators.filter import LLMFilter
 from palimpzest.query.processor.config import QueryProcessorConfig
 from palimpzest.schemabuilder.schema_builder import SchemaBuilder
 
-data_path = Path("tests/pytest/data/")
+data_path = "tests/pytest/data/"
 
 
-def test_dynamicschema_jsonld(project_root: Path):
-    asset_path = str(project_root / data_path / "synapse_schema.jsonld")
-    clinical_schema = SchemaBuilder.from_file(asset_path, schema_type=TextFile)
+def test_dynamicschema_jsonld():
+    clinical_schema = SchemaBuilder.from_file(data_path + "synapse_schema.jsonld", schema_type=TextFile)
     assert clinical_schema is not None
 
-def test_dynamicschema_csv(project_root: Path):
-    asset_path = str(project_root / data_path / "synapse_schema.csv")
-    clinical_schema = SchemaBuilder.from_file(asset_path, schema_type=TextFile)
+def test_dynamicschema_csv():
+    clinical_schema = SchemaBuilder.from_file(data_path + "/synapse_schema.csv", schema_type=TextFile)
     assert clinical_schema is not None
 
 
-def test_dynamicschema_json(mocker, enron_workload, enron_convert, enron_filter, project_root: Path):
-    asset_path = str(project_root / data_path / "email_schema.json")
-    email_schema = SchemaBuilder.from_file(asset_path, schema_type=TextFile)
+def test_dynamicschema_json(mocker, enron_workload, enron_convert, enron_filter):
+    email_schema = SchemaBuilder.from_file(data_path + "/email_schema.json")
     assert email_schema is not None
     for field_name in TextFile.model_fields:
         assert field_name in email_schema.model_fields, f"Field {field_name} not found in the schema"
@@ -52,9 +47,8 @@ def test_dynamicschema_json(mocker, enron_workload, enron_convert, enron_filter,
         print(rec.to_dict())
 
 
-def test_dynamicschema_yml(mocker, enron_workload, enron_convert, enron_filter, project_root: Path):
-    asset_path = str(project_root / data_path / "email_schema.yml")
-    email_schema = SchemaBuilder.from_file(asset_path, schema_type=TextFile)
+def test_dynamicschema_yml(mocker, enron_workload, enron_convert, enron_filter):
+    email_schema = SchemaBuilder.from_file(data_path + "/email_schema.yml")
     assert email_schema is not None
     for field_name in TextFile.model_fields:
         assert field_name in email_schema.model_fields, f"Field {field_name} not found in the schema"

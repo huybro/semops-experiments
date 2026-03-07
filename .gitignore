@@ -28,3 +28,7 @@ logs/
 
 # Lock file (large)
 uv.lock
+
+
+projects/palimpzest/parse-answer-errors/
+

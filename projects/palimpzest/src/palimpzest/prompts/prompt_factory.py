@@ -2,7 +2,6 @@
 
 import base64
 import json
-import os
 from typing import Any
 
 from pydantic import BaseModel
@@ -139,32 +138,6 @@ from palimpzest.prompts.utils import (
     THIRD_IMAGE_EXAMPLE_CONTEXT,
     THIRD_TEXT_EXAMPLE_CONTEXT,
 )
-
-
-def _detect_image_media_type(filepath: str | None = None, base64_data: str | None = None) -> str:
-    """Detect image media type from file extension or base64 magic bytes."""
-    if filepath:
-        ext = os.path.splitext(filepath)[1].lower()
-        ext_map = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-                   ".gif": "image/gif", ".webp": "image/webp"}
-        if ext in ext_map:
-            return ext_map[ext]
-
-    if base64_data:
-        try:
-            header = base64.b64decode(base64_data[:32])
-            if header[:8] == b"\x89PNG\r\n\x1a\n":
-                return "image/png"
-            if header[:3] == b"\xff\xd8\xff":
-                return "image/jpeg"
-            if header[:6] in (b"GIF87a", b"GIF89a"):
-                return "image/gif"
-            if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
-                return "image/webp"
-        except Exception:
-            pass
-
-    return "image/jpeg"
 
 
 class PromptFactory:
@@ -916,9 +889,8 @@ class PromptFactory:
                 if field_type.annotation in [ImageFilepath, ImageFilepath | None, ImageFilepath | Any] and field_value is not None:
                     with open(field_value, "rb") as f:
                         base64_image_str = base64.b64encode(f.read()).decode("utf-8")
-                    media_type = _detect_image_media_type(filepath=field_value, base64_data=base64_image_str)
                     image_content.append(
-                        {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{base64_image_str}"}}
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image_str}"}}
                     )
 
                 elif field_type.annotation in [list[ImageFilepath], list[ImageFilepath] | None, list[ImageFilepath] | Any]:
@@ -927,9 +899,8 @@ class PromptFactory:
                             continue
                         with open(image_filepath, "rb") as f:
                             base64_image_str = base64.b64encode(f.read()).decode("utf-8")
-                        media_type = _detect_image_media_type(filepath=image_filepath, base64_data=base64_image_str)
                         image_content.append(
-                            {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{base64_image_str}"}}
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image_str}"}}
                         )
 
                 # image url (or list of image urls)
@@ -944,18 +915,16 @@ class PromptFactory:
 
                 # pre-encoded images (or list of pre-encoded images)
                 elif field_type.annotation in [ImageBase64, ImageBase64 | None, ImageBase64 | Any] and field_value is not None:
-                    media_type = _detect_image_media_type(base64_data=field_value)
                     image_content.append(
-                        {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{field_value}"}}
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{field_value}"}}
                     )
 
                 elif field_type.annotation in [list[ImageBase64], list[ImageBase64] | None, list[ImageBase64] | Any]:
                     for base64_image in field_value:
                         if base64_image is None:
                             continue
-                        media_type = _detect_image_media_type(base64_data=base64_image)
                         image_content.append(
-                            {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{base64_image}"}}
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                         )
 
         return [{"role": "user", "type": "image", "content": image_content}] if len(image_content) > 0 else []
@@ -1107,12 +1076,124 @@ class PromptFactory:
         kwargs = {**kwargs, **format_kwargs}
 
         # generate system message (if applicable)
-        system_prompt = self._get_system_prompt(**kwargs)
-        if system_prompt is not None:
-            messages.append({"role": "system", "type": "text", "content": system_prompt})
+        # system_prompt = self._get_system_prompt(**kwargs)
+        # system_prompt = "You are a helpful assistant for executing semantic operators.\n"+ \
+        #                 "You will be given data and an operation description.\n" + \
+        #                 "Apply the operation to the provided tuples exactly as specified and return only the required result.\n"
+        # if system_prompt is not None:
+        #     messages.append({"role": "system", "type": "text", "content": system_prompt})
 
         # generate user messages and add to messages
-        user_messages = self._get_user_messages(candidate, input_fields, right_candidate, right_input_fields, **kwargs)
+        # user_messages = self._get_user_messages(candidate, input_fields, right_candidate, right_input_fields, **kwargs)
+        # user_messages =  [{"role": "system", "type": "text", "content": f"{candidate} "}]
+
+        # filter_op_instruction = "For each record, return TRUE if the record satisfies the condition. Otherwise return FALSE. Return results in the same order as the input data."
+        # operation = filter_op_instruction
+
+        system_prompt = (
+            "You are a helpful assistant for executing semantic operators.\n"
+            "You will be given data and an operation description.\n"
+            "Apply the operation to the provided data exactly as specified and return only the required result.\n"
+        )
+
+        if system_prompt is not None:
+            messages.append(
+                {"role": "system", "type": "text", "content": system_prompt}
+            )
+        if self.prompt_strategy == 'filter':
+            operation = (
+                "You will be presented with a context and a filter condition. Output TRUE if the context satisfies the filter condition, and FALSE otherwise.\n" + \
+                "Remember, your answer must be TRUE or FALSE. Finish your response with a newline character\n" + \
+                "Output TRUE or FALSE only.\n" + \
+                f"Condition:{kwargs['filter_condition']}\n"
+            )
+        elif self.prompt_strategy == 'map':
+            operation = (
+                "You  are presented with a context and a mapping instruction.\n"
+                "Apply the instruction to the context and produce the mapped output.\n"
+                "The output must strictly follow the instruction and contain no extra commentary.\n"
+                f"Map Instruction:{kwargs['output_fields_desc']}\n"
+            )
+        elif self.prompt_strategy == 'agg':
+            operation = (
+                "You are presented with multiple contexts.\n"
+                "Aggregate them according to the aggregation instruction.\n"
+                "The output must be a single aggregated result.\n"
+                "Do not include explanations or commentary.\n"
+                f"Instruction:{kwargs['agg_instruction']}\n"
+            )
+        elif self.prompt_strategy == 'join':
+            operation = (
+                "You are presented with two contexts.\n"
+                "Determine whether the two contexts A, B together satisfy the condition.\n"
+                "Remember, your answer must be TRUE or FALSE. Finish your response with a newline character\n" + \
+                "The output must strictly follow the condition and contain no extra commentary.\n"
+                f"Condition:{kwargs['join_condition']}\n"
+            )
+
+        if self.prompt_strategy == 'join':
+            user_messages = [
+                {
+                    "role": "user",
+                    "type": "text",
+                    "content": (
+                        "CONTEXT_A:\n"
+                        "  {\n"
+                        f"    \"text\": {json.dumps(candidate['contents'])}\n"
+                        "  }\n"
+                        "\n\n"
+                        "CONTEXT_B:\n"
+                        "  {\n"
+                        f"    \"text\": {json.dumps(right_candidate['contents'])}\n"
+                        "  }\n"
+                        "\n\n"
+                        "TASK:\n"
+                        f"{operation}\n\n"
+                        "ANSWER:\n"
+                    ),
+                }
+            ]
+        else:
+            if candidate.contents_right is not None:
+                user_messages = [
+                    {
+                        "role": "user",
+                        "type": "text",
+                        "content": (
+                            "CONTEXT_A:\n"
+                            "  {\n"
+                            f"    \"text\": {json.dumps(candidate['contents'])}\n"
+                            "  }\n"
+                            "\n\n"
+                            "CONTEXT_B:\n"
+                            "  {\n"
+                            f"    \"text\": {candidate.contents_right}\n"
+                            "  }\n"
+                            "\n\n"
+                            "TASK:\n"
+                            f"{operation}\n\n"
+                            "ANSWER:\n"
+                        ),
+                    }
+                ]
+            else:
+                user_messages = [
+                    {
+                        "role": "user",
+                        "type": "text",
+                        "content": (
+                            "CONTEXT:\n"
+                            "  {\n"
+                            f"    \"text\": {json.dumps(candidate['contents'])}\n"
+                            "  }\n"
+                            "\n\n"
+                            "TASK:\n"
+                            f"{operation}\n\n"
+                            "ANSWER:\n"
+                        ),
+                    }
+                ]
+
         messages.extend(user_messages)
 
         return messages

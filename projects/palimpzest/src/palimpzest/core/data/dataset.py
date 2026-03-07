@@ -119,7 +119,7 @@ class Dataset:
         return f"Dataset(schema={self._schema}, id={self._id}, op_id={self._operator.get_logical_op_id()})"
 
     def __iter__(self) -> Iterator[Dataset]:
-        for source in self._sources:
+        for idx, source in enumerate(self._sources):
             yield from source
         yield self
 
@@ -592,10 +592,11 @@ class Dataset:
         # construct new output schema
         new_output_schema = None
         if isinstance(col, dict):
-            new_output_schema = create_schema_from_fields([col])
+            col_schema = create_schema_from_fields([col])
+            new_output_schema = union_schemas([self.schema, col_schema])
         elif issubclass(col, BaseModel):
             assert len(col.model_fields) == 1, "For semantic aggregation, when passing a BaseModel to `col` it must have exactly one field."
-            new_output_schema = col
+            new_output_schema = union_schemas([self.schema, col])
         else:
             raise ValueError("`col` must be a dictionary or a single-field BaseModel.")
 

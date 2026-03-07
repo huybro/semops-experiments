@@ -15,15 +15,6 @@ print("\n" + "=" * 60)
 print("  PIPELINE: map only (verdict)")
 print("=" * 60)
 
-# ── LOTUS ──
-state.rewrite_mode = False
-state.captured.clear()
-t0 = time.time()
-df_m = joined_df.copy().sem_map(MAP_VERDICT, suffix="verdict")
-lotus_time = time.time() - t0
-lotus_cap = list(state.captured)
-print(f"  LOTUS: {len(df_m)} rows ({lotus_time:.1f}s)")
-
 # ── PZ ──
 state.rewrite_mode = True
 state.current_filter_instruction = None
@@ -43,11 +34,9 @@ print(f"  PZ:    {len(pz_m_df)} rows ({pz_time:.1f}s)")
 rows = []
 for i in range(len(joined_df)):
     row = joined_df.iloc[i]
-    lm = lotus_cap[i] if i < len(lotus_cap) else _empty
     pm = pz_cap[i] if i < len(pz_cap) else _empty
     rows.append({
         "tuple": i, "claim": row["claim"][:80], "evidence": row["content"][:80],
-        "lotus_input": lm["input"], "lotus_output": lm["output"],
         "pz_input": pm["input"], "pz_output": pm["output"],
     })
 write_csv("logs/map_fever.csv", rows)
