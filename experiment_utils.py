@@ -47,9 +47,9 @@ def nle2str(nle, cols):
 # ============================================================
 # Configuration
 # ============================================================
-MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
+MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 MAX_TOKENS = 512
-VLLM_API_BASE = "http://localhost:8000/v1"
+VLLM_API_BASE = "http://localhost:8003/v1"
 
 # ============================================================
 # Instruction templates
@@ -58,7 +58,7 @@ VLLM_API_BASE = "http://localhost:8000/v1"
 # Filter: is the evidence relevant to the claim?
 FILTER_RELEVANCE = (
     "The following evidence is relevant to the claim.\n"
-    "Evidence: {content}\nClaim: {claim}"
+    "Claim: {claim} Evidence: {content}\n"
 )
 
 # Filter: does the evidence support the claim?
