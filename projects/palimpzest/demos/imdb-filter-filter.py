@@ -8,7 +8,8 @@ if __name__ == "__main__":
 
 
     # construct plan
-    plan = pz.TextFileDataset(id="enron", path="/home/hojaeson_umass_edu/.cache/kagglehub/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews/versions/1/imdb_sample_500_texts")
+    plan = pz.TextFileDataset(id="enron", path="/project/pi_mserafini_umass_edu/shared/imdb_sample_500_texts")
+    plan = pz.TextFileDataset(id="enron", path="/project/pi_mserafini_umass_edu/shared/imdb_sample_5_texts")
     
     # filter - filter
     plan = plan.sem_filter(
