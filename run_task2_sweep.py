@@ -29,9 +29,9 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Lotus setup (before loading experiment_utils)
-os.environ.setdefault("VLLM_API_BASE", "http://localhost:8000/v1")
+os.environ.setdefault("VLLM_API_BASE", "http://localhost:8003/v1")
 MODEL_NAME = "meta-llama/Llama-3.2-1B-Instruct"
-VLLM_PORT = 8000
+VLLM_PORT = 8003
 
 # Lotus config
 import lotus
@@ -65,7 +65,7 @@ FILTER_INSTR = (
 )
 
 
-def start_vllm(port: int = 8000, model: str = "meta-llama/Llama-3.2-1B-Instruct") -> subprocess.Popen:
+def start_vllm(port: int = 8003, model: str = "meta-llama/Llama-3.2-1B-Instruct") -> subprocess.Popen:
     """Start vLLM server in background, return process handle."""
     proc = subprocess.Popen(
         [
@@ -83,11 +83,16 @@ def start_vllm(port: int = 8000, model: str = "meta-llama/Llama-3.2-1B-Instruct"
     return proc
 
 
-def wait_for_vllm(base_url: str, max_wait: int = 300) -> bool:
+def wait_for_vllm(base_url: str, max_wait: int = 300, verbose: bool = True) -> bool:
     """Wait for vLLM /health to succeed. Returns True if ready."""
     url = base_url.rstrip("/").replace("/v1", "") + "/health"
     start = time.time()
+    last_msg = 0
     while time.time() - start < max_wait:
+        elapsed = int(time.time() - start)
+        if verbose and elapsed > 0 and elapsed - last_msg >= 15:
+            print(f"    Waiting for vLLM... ({elapsed}s, can take 2–5 min on first load)")
+            last_msg = elapsed
         try:
             with urllib.request.urlopen(url, timeout=5) as resp:
                 if resp.status == 200:
@@ -147,8 +152,8 @@ def main():
     parser = argparse.ArgumentParser(description="Task 2 sweep: throughput vs prefix cache hit rate")
     parser.add_argument("--samples", type=int, nargs="+", default=[10, 25, 50, 100, 200],
                         help="Sample sizes to sweep")
-    parser.add_argument("--vllm-url", type=str, default="http://localhost:8000",
-                        help="vLLM server base URL (e.g. http://localhost:8000)")
+    parser.add_argument("--vllm-url", type=str, default="http://localhost:8003",
+                        help="vLLM server base URL (e.g. http://localhost:8003)")
     parser.add_argument("--output-dir", type=str, default="logs",
                         help="Output directory for CSV and plot")
     parser.add_argument("--csv-path", type=str, required=True,
@@ -157,7 +162,7 @@ def main():
                         help="Skip plotting")
     parser.add_argument("--no-relaunch", action="store_true",
                         help="Assume vLLM already running; use delta metrics instead of relaunch")
-    parser.add_argument("--vllm-port", type=int, default=8000,
+    parser.add_argument("--vllm-port", type=int, default=8003,
                         help="vLLM server port")
     args = parser.parse_args()
 
