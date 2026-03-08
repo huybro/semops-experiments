@@ -18,10 +18,6 @@ Usage:
 import os
 import re
 import csv
-import json
-import unicodedata
-import time
-
 import lotus
 import pandas as pd
 import palimpzest as pz
@@ -31,8 +27,7 @@ from palimpzest.constants import Model
 from palimpzest.query.processor.config import QueryProcessorConfig
 
 from universal_prompts import (
-    get_prompt,
-    lotus_df2text_row,
+
     install_prompt_overrides,
     install_pz_prompt_overrides,
 )
@@ -57,8 +52,7 @@ VLLM_API_BASE = "http://localhost:8003/v1"
 
 # Filter: is the evidence relevant to the claim?
 FILTER_RELEVANCE = (
-    "The following evidence is relevant to the claim.\n"
-    "Claim: {claim} Evidence: {content}\n"
+    "{claim} {content} The evidence can determine whether the claim is true or false\n"
 )
 
 # Filter: does the evidence support the claim?
@@ -111,9 +105,7 @@ _lotus_lm = LM(
 lotus.settings.configure(lm=_lotus_lm)
 
 
-# ============================================================
-# litellm interceptor — captures LOTUS + rewrites PZ
-# ============================================================
+
 _original_completion = _litellm.completion
  
 
@@ -240,44 +232,3 @@ def write_csv(filepath, rows):
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-
-
-
-def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
-    """Run PZ sem_map, falling back to direct LLM calls if optimizer crashes."""
-    try:
-        ds = pz.MemoryDataset(
-            id=f"cmp-{col_name}",
-            vals=data_df.to_dict("records"),
-        )
-        ds = ds.sem_map(
-            cols=[{"name": col_name, "type": str, "desc": pz_desc}],
-            depends_on=cols_used,
-        )
-        result = ds.run(config=pz_config, max_quality=True)
-        return result.to_df()
-    except Exception:
-        outputs = []
-        for _, row in data_df.iterrows():
-            data_dict = {c: row[c] for c in cols_used}
-            data = lotus_df2text_row(data_dict, cols_used)
-            instr = nle2str(instruction, cols_used)
-            msgs = get_prompt(instr, data, op='sem_map')
-            res = _original_completion(
-                model=f"hosted_vllm/{MODEL_NAME}",
-                messages=msgs,
-                max_tokens=MAX_TOKENS,
-                temperature=0,
-                api_base=VLLM_API_BASE,
-            )
-            output = res.choices[0].message.content if res.choices else ""
-            outputs.append(output.strip())
-            state.captured.append({
-                "input": "\n".join(m.get("content", "") for m in msgs if isinstance(m, dict)),
-                "output": output,
-                "claim": row.get("claim", ""),
-                "content": row.get("content", ""),
-            })
-        df = data_df.copy()
-        df[col_name] = outputs
-        return df
