@@ -91,31 +91,21 @@ def get_prompt(instruction, data, data2=None, op='sem_filter'):
 
 
 def install_prompt_overrides():
-    """Monkey-patch LOTUS's filter_formatter and map_formatter to use get_prompt().
+    """Monkey-patch LOTUS's filter_formatter for sem_join (filter/map use *_formatter_custom directly).
     """
     import lotus.templates.task_instructions as task_instr
+    from lotus.templates import prompt_utils as lotus_prompt_utils
+    from lotus.templates.base import OpName
 
     def custom_filter_formatter(model, multimodal_data, user_instruction, *args, **kwargs):
-        """Replacement filter_formatter matching LOTUS's real signature.
-        - multimodal_data: dict with "text" key (serialized row data)
-        - user_instruction: raw instruction template (e.g., "{content}\n...")
-        """
+        """Used by sem_join. Filter uses filter_formatter_custom; map uses map_formatter_custom."""
         if isinstance(multimodal_data, dict):
             data = multimodal_data.get("text", str(multimodal_data))
         else:
             data = str(multimodal_data)
-        return get_prompt(user_instruction, data, op='sem_filter')
-
-    def custom_map_formatter(model, multimodal_data, user_instruction, *args, **kwargs):
-        """Replacement map_formatter matching LOTUS's real signature."""
-        if isinstance(multimodal_data, dict):
-            data = multimodal_data.get("text", str(multimodal_data))
-        else:
-            data = str(multimodal_data)
-        return get_prompt(user_instruction, data, op='sem_map')
+        return lotus_prompt_utils.get_prompt(user_instruction, data, op=OpName.SEM_FILTER)
 
     task_instr.filter_formatter = custom_filter_formatter
-    task_instr.map_formatter = custom_map_formatter
 
 
 def install_pz_prompt_overrides():
