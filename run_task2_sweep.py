@@ -112,7 +112,7 @@ def stop_vllm(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
-def fetch_vllm_metrics(base_url: str) -> dict[str, float]:
+def fetch_vllm_metrics(base_url: str, debug: bool = False) -> dict[str, float]:
     """Fetch vLLM /metrics and parse prefix cache counters."""
     url = base_url.rstrip("/").replace("/v1", "") + "/metrics"
     try:
@@ -125,16 +125,21 @@ def fetch_vllm_metrics(base_url: str) -> dict[str, float]:
     hits = 0
     queries = 0
     for line in text.splitlines():
-        line = line.strip()
-        if line.startswith("#") or not line:
+        line_stripped = line.strip()
+        if line_stripped.startswith("#") or not line_stripped:
             continue
-        m = re.search(r'vllm:prefix_cache_hits(?:\{[^}]*\})?\s+(\d+(?:\.\d+)?)', line)
+        if "prefix_cache" in line_stripped.lower():
+            if debug:
+                print(f"    [DEBUG] {line_stripped}")
+        m = re.search(r'vllm:prefix_cache_hits(?:\{[^}]*\})?\s+(\d+(?:\.\d+)?)', line_stripped)
         if m:
             hits = float(m.group(1))
             continue
-        m = re.search(r'vllm:prefix_cache_queries(?:\{[^}]*\})?\s+(\d+(?:\.\d+)?)', line)
+        m = re.search(r'vllm:prefix_cache_queries(?:\{[^}]*\})?\s+(\d+(?:\.\d+)?)', line_stripped)
         if m:
             queries = float(m.group(1))
+    if debug:
+        print(f"    [DEBUG] Parsed: prefix_cache_hits={hits}, prefix_cache_queries={queries}")
     return {"prefix_cache_hits": hits, "prefix_cache_queries": queries}
 
 
@@ -162,6 +167,8 @@ def main():
                         help="Skip plotting")
     parser.add_argument("--no-relaunch", action="store_true",
                         help="Assume vLLM already running; use delta metrics instead of relaunch")
+    parser.add_argument("--debug-metrics", action="store_true",
+                        help="Print raw prefix cache metric lines from /metrics")
     parser.add_argument("--vllm-port", type=int, default=8003,
                         help="vLLM server port")
     args = parser.parse_args()
@@ -201,12 +208,12 @@ def main():
             print("    vLLM ready.")
             base_url = run_base_url
 
-        metrics_before = fetch_vllm_metrics(base_url) if not relaunch else None
+        metrics_before = fetch_vllm_metrics(base_url, debug=args.debug_metrics) if not relaunch else None
 
         df_out, elapsed, num_requests = run_pipeline(df)
         throughput = num_requests / elapsed if elapsed > 0 else 0
 
-        metrics_after = fetch_vllm_metrics(base_url)
+        metrics_after = fetch_vllm_metrics(base_url, debug=args.debug_metrics)
         if relaunch:
             hits = metrics_after["prefix_cache_hits"]
             queries = metrics_after["prefix_cache_queries"]
