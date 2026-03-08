@@ -108,9 +108,43 @@ def install_prompt_overrides():
     task_instr.filter_formatter = custom_filter_formatter
 
 
-def install_pz_prompt_overrides():
-
+def install_pz_prompt_overrides(get_map_instruction=None):
+    """
+    Install PZ prompt overrides for FEVER experiment alignment.
+    If get_map_instruction is provided, it will be used for map prompts to match Lotus format.
+    get_map_instruction(input_fields: list[str]) -> str | None: returns Lotus-style instruction when applicable.
+    """
     from palimpzest.constants import Model
+    from palimpzest.prompts import prompt_factory, prompt_utils
+    from palimpzest.prompts import base
+
+    # Patch create_messages to use Lotus-style map instruction when provided
+    if get_map_instruction is not None:
+        _original_create_messages = prompt_factory.PromptFactory.create_messages
+        def _patched_create_messages(self, candidate, output_fields, right_candidate=None, **kwargs):
+            # For map prompts, use Lotus-style instruction when get_map_instruction returns one
+            if self.prompt_strategy.is_map_prompt():
+                input_fields = self._get_input_fields(
+                    candidate[0] if isinstance(candidate, list) else candidate, **kwargs
+                )
+                lotus_instruction = get_map_instruction(input_fields)
+                if lotus_instruction is not None:
+                    right_input_fields = [] if right_candidate is None else self._get_input_fields(right_candidate, **kwargs)
+                    input_modalities = self._get_input_modalities(
+                        candidate[0] if isinstance(candidate, list) else candidate,
+                        input_fields,
+                    )
+                    right_input_modalities = set() if right_candidate is None else self._get_input_modalities(right_candidate, right_input_fields)
+                    format_kwargs = self._get_all_format_kwargs(
+                        candidate, input_fields, input_modalities, output_fields,
+                        right_candidate, right_input_fields, right_input_modalities,
+                        **kwargs,
+                    )
+                    return prompt_utils.get_prompt(
+                        lotus_instruction, format_kwargs["context"], op=base.OpName.SEM_MAP
+                    )
+            return _original_create_messages(self, candidate, output_fields, right_candidate, **kwargs)
+        prompt_factory.PromptFactory.create_messages = _patched_create_messages
 
     # Patch __init__ to accept hosted_vllm models not in PZ's known list
     _original_init = Model.__init__

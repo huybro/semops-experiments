@@ -87,6 +87,7 @@ class _State:
         self.current_filter_instruction = None
         self.current_filter_cols = None
         self.current_map_instruction = None
+        self.current_map_cols = None  # input fields for map (e.g. ["content", "claim"])
         self.debug = False  # Set to False to silence prompt logging
         self.call_count = 0
 
@@ -137,7 +138,14 @@ _litellm.completion = _interceptor
 # ============================================================
 # Setup — PZ
 # ============================================================
-install_pz_prompt_overrides()
+def _get_map_instruction(input_fields):
+    """Return Lotus-style map instruction when set (for FEVER alignment with Lotus)."""
+    if state.current_map_instruction and state.current_map_cols:
+        return nle2str(state.current_map_instruction, state.current_map_cols)
+    return None
+
+
+install_pz_prompt_overrides(get_map_instruction=_get_map_instruction)
 
 PZ_MODEL = Model(f"hosted_vllm/{MODEL_NAME}")
 PZ_MODEL.api_base = VLLM_API_BASE
@@ -185,6 +193,8 @@ def write_csv(filepath, rows):
 
 def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
     """Run PZ sem_map, falling back to direct LLM calls if optimizer crashes."""
+    state.current_map_instruction = instruction
+    state.current_map_cols = cols_used
     try:
         ds = pz.MemoryDataset(
             id=f"cmp-{col_name}",
