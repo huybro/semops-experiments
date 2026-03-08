@@ -78,15 +78,9 @@ def sem_map(
     # prepare model inputs
     inputs = []
     for doc in docs:
-        prompt = task_instructions.map_formatter_2(
-            model,
+        prompt = task_instructions.map_formatter_custom(
             doc,
             user_instruction,
-            examples_multimodal_data,
-            examples_answers,
-            cot_reasoning,
-            strategy=strategy,
-            system_prompt=system_prompt,
         )
         lotus.logger.debug(f"input to model: {prompt}")
         lotus.logger.debug(f"inputs content to model: {[x.get('content') for x in prompt]}")

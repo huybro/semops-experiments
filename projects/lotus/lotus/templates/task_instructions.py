@@ -163,9 +163,18 @@ def filter_formatter_custom(
     multimodal_data: dict[str, Any],
     user_instruction: str,
 ) -> list[dict[str, str]]:
-    
-    messages = prompt_utils.get_prompt(user_instruction, multimodal_data['text'])
+    messages = prompt_utils.get_prompt(user_instruction, multimodal_data["text"])
+    return messages
 
+
+def map_formatter_custom(
+    multimodal_data: dict[str, Any],
+    user_instruction: str,
+) -> list[dict[str, str]]:
+    """Use lotus prompt_utils directly (same pattern as filter_formatter_custom)."""
+    messages = prompt_utils.get_prompt(
+        user_instruction, multimodal_data["text"], op=OpName.SEM_MAP
+    )
     return messages
 
 
