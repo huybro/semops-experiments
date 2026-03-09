@@ -41,7 +41,9 @@ VLLM_API_BASE = "http://localhost:8003/v1"
 
 # Filter: is the evidence relevant to the claim?
 FILTER_RELEVANCE = (
-    "{claim} {content} The evidence can determine whether the claim is true or false\n"
+    "The sentence can determine whether the claim is true or false.\n"
+    "Answer TRUE if the context is sufficient to judge the claim, and FALSE otherwise.\n"
+    "Output TRUE or FALSE only."
 )
 
 # Filter: does the evidence support the claim?
@@ -52,9 +54,8 @@ FILTER_SUPPORT = (
 
 # Map: based on both claim and evidence, generate a verdict (Claim first, Evidence second)
 MAP_VERDICT = (
-    "Based on the following claim and evidence, determine if the claim is true or false.\n"
-    "Claim: {claim}\nEvidence: {content}\n"
-    "Answer with exactly TRUE or FALSE, nothing else."
+    "Explain how the claim can be supported by the evidence.\n"
+    "Provide a short explanation in natural language."
 )
 
 # Filter: verify verdict against evidence and claim (used after sem_map)
