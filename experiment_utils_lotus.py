@@ -23,7 +23,7 @@ import pandas as pd
 import litellm as _litellm
 from lotus.models import LM
 
-from universal_prompts import override_prompt
+from universal_prompts import override_lotus_prompt
 
 from transformers import AutoTokenizer
 

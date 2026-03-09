@@ -15,22 +15,14 @@ Usage:
         write_csv, find_match, pz_map_with_fallback,
     )
 """
-import os
-import csv
-import time
-
-import lotus
-import pandas as pd
 import palimpzest as pz
 import litellm as _litellm
-from lotus.models import LM
 from palimpzest.constants import Model
 from palimpzest.query.processor.config import QueryProcessorConfig
 
 from universal_prompts import (
     get_prompt,
-    install_prompt_overrides,
-    install_pz_prompt_overrides,
+    override_palimpzest_prompt
 )
 
 
@@ -95,18 +87,6 @@ class _State:
 state = _State()
 
 
-# ============================================================
-# Setup — LOTUS
-# ============================================================
-install_prompt_overrides()
-_lotus_lm = LM(
-    model=f"hosted_vllm/{MODEL_NAME}",
-    api_base=VLLM_API_BASE,
-    max_tokens=MAX_TOKENS,
-    temperature=0,
-)
-lotus.settings.configure(lm=_lotus_lm)
-
 
 # ============================================================
 # litellm interceptor — captures PZ prompts (no rewrite needed)
@@ -145,8 +125,7 @@ def _get_map_instruction(input_fields):
         return nle2str(state.current_map_instruction, state.current_map_cols)
     return None
 
-
-install_pz_prompt_overrides(get_map_instruction=_get_map_instruction)
+override_palimpzest_prompt(get_map_instruction=_get_map_instruction)
 
 PZ_MODEL = Model(f"hosted_vllm/{MODEL_NAME}")
 PZ_MODEL.api_base = VLLM_API_BASE
@@ -161,36 +140,6 @@ pz_config = QueryProcessorConfig(
     allow_split_merge=False,
     verbose=False,
 )
-
-
-# ============================================================
-# Load Data
-# ============================================================
-DATA_PATH = "data/fever_claims_with_evidence.csv"
-if not os.path.exists(DATA_PATH):
-    raise FileNotFoundError(
-        f"{DATA_PATH} not found. Run 'python prepare_data.py' first to generate it."
-    )
-joined_df = pd.read_csv(DATA_PATH)
-# FEVER format: add [Claim]/[Evidence] prefixes for Lotus/PZ alignment
-joined_df["claim"] = "[Claim] " + joined_df["claim"]
-joined_df["content"] = "[Evidence] " + joined_df["content"]
-print(f"Loaded {len(joined_df)} (claim, evidence) pairs from {DATA_PATH}")
-
-os.makedirs("logs", exist_ok=True)
-
-
-# ============================================================
-# Helpers
-# ============================================================
-def write_csv(filepath, rows):
-    if not rows:
-        return
-    with open(filepath, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
-        writer.writeheader()
-        writer.writerows(rows)
-
 
 
 def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):

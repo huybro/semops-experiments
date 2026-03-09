@@ -2,15 +2,16 @@
 
 """Pipeline: sem_filter (relevance) — PZ only."""
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/..')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/..')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+"/../projects/palimpzest/src")
 
 import time
 import palimpzest as pz
 from experiment_utils_palimpzest import (
-    state, joined_df, pz_config,
+    state, pz_config,
     FILTER_RELEVANCE,
-    write_csv,
 )
+from data_utils import write_csv, load_fever
 
 _empty = {"input": "", "output": "", "claim": "", "content": ""}
 
@@ -24,6 +25,7 @@ state.current_filter_instruction = FILTER_RELEVANCE
 state.current_filter_cols = ["claim", "content"]
 state.captured.clear()
 t0 = time.time()
+joined_df = load_fever("data/fever_claims_with_evidence.csv")
 ds = pz.MemoryDataset(id="cmp-f1", vals=joined_df.to_dict("records"))
 ds = ds.sem_filter(
     "The following evidence is relevant to the claim. Claim: {claim} Evidence: {content}",
