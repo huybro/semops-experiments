@@ -90,7 +90,12 @@ def get_prompt(instruction, data, data2=None, op='sem_filter'):
     return messages
 
 
-def install_prompt_overrides():
+def lotus_df2text_row(row_dict, cols):
+    """Replicate LOTUS's df2text format: [Column]: «value» for each column."""
+    return "".join(f"[{col.capitalize()}]: «{row_dict[col]}»\n" for col in cols)
+
+
+def override_lotus_prompt():
     """Monkey-patch LOTUS's filter_formatter for sem_join (filter/map use *_formatter_custom directly).
     """
     import lotus.templates.task_instructions as task_instr
@@ -108,7 +113,7 @@ def install_prompt_overrides():
     task_instr.filter_formatter = custom_filter_formatter
 
 
-def install_pz_prompt_overrides(get_map_instruction=None):
+def override_palimpzest_prompt(get_map_instruction=None):
     """
     Install PZ prompt overrides for FEVER experiment alignment.
     If get_map_instruction is provided, it will be used for map prompts to match Lotus format.
