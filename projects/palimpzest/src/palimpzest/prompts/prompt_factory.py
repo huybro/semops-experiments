@@ -6,8 +6,12 @@ from typing import Any
 
 from pydantic import BaseModel
 
-# Global variable to allow custom map instruction override for experiments
-CUSTOM_MAP_INSTRUCTION_FUNC = None
+# We are now passing the custom map instruction cleanly through the architecture!
+
+def nle2str(nle: str, cols: list[str]) -> str:
+    """Replicate LOTUS's nle2str: replace {col} with col.capitalize()."""
+    d = {col: col.capitalize() for col in cols}
+    return nle.format(**d)
 
 from palimpzest.constants import (
     LLAMA_CONTEXT_TOKENS_LIMIT,
@@ -209,11 +213,12 @@ class PromptFactory:
         PromptStrategy.MAP_SPLIT_MERGER: MAP_SPLIT_MERGER_BASE_USER_PROMPT,
     }
 
-    def __init__(self, prompt_strategy: PromptStrategy, model: Model, cardinality: Cardinality, desc: str | None = None) -> None:
+    def __init__(self, prompt_strategy: PromptStrategy, model: Model, cardinality: Cardinality, desc: str | None = None, custom_instruction: str | None = None) -> None:
         self.prompt_strategy = prompt_strategy
         self.model = model
         self.cardinality = cardinality
         self.desc = desc
+        self.custom_instruction = custom_instruction
 
     def _get_context(self, candidate: DataRecord | list[DataRecord], input_fields: list[str]) -> str:
         """
@@ -1096,10 +1101,9 @@ class PromptFactory:
         if self.prompt_strategy.is_filter_prompt():
             messages = prompt_utils.get_prompt(kwargs['filter_condition'], kwargs['context'], op=base.OpName.SEM_FILTER)
         elif self.prompt_strategy.is_map_prompt():
-            if CUSTOM_MAP_INSTRUCTION_FUNC is not None:
-                lotus_instruction = CUSTOM_MAP_INSTRUCTION_FUNC(input_fields)
-                if lotus_instruction is not None:
-                    return prompt_utils.get_prompt(lotus_instruction, kwargs['context'], op=base.OpName.SEM_MAP)
+            if self.custom_instruction is not None:
+                custom_instruction_str = nle2str(self.custom_instruction, input_fields)
+                return prompt_utils.get_prompt(custom_instruction_str, kwargs['context'], op=base.OpName.SEM_MAP)
             messages = prompt_utils.get_prompt(kwargs['output_fields_desc'], kwargs['context'], op=base.OpName.SEM_MAP)
         elif self.prompt_strategy.is_agg_prompt():
             messages = prompt_utils.get_prompt(kwargs['agg_instruction'], kwargs['context'], op=base.OpName.SEM_AGG)

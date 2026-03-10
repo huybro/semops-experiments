@@ -113,6 +113,7 @@ class Generator(Generic[ContextType, InputType]):
         api_base: str | None = None,
         cardinality: Cardinality = Cardinality.ONE_TO_ONE,
         desc: str | None = None,
+        custom_instruction: str | None = None,
         verbose: bool = False,
     ):
         self.model = model
@@ -122,8 +123,9 @@ class Generator(Generic[ContextType, InputType]):
         self.reasoning_effort = reasoning_effort
         self.api_base = api_base
         self.desc = desc
+        self.custom_instruction = custom_instruction
         self.verbose = verbose
-        self.prompt_factory = PromptFactory(prompt_strategy, model, cardinality, desc)
+        self.prompt_factory = PromptFactory(prompt_strategy, model, cardinality, desc, custom_instruction)
 
     def _parse_reasoning(self, completion_text: str, **kwargs) -> str:
         """Extract the reasoning for the generated output from the completion object."""
