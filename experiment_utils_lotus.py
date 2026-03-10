@@ -22,8 +22,6 @@ import pandas as pd
 import litellm as _litellm
 from lotus.models import LM
 
-from universal_prompts import override_lotus_prompt
-
 from transformers import AutoTokenizer
 
 
@@ -73,7 +71,6 @@ logger = []
 # ============================================================
 # Setup — LOTUS
 # ============================================================
-override_lotus_prompt()
 _lotus_lm = LM(
     model=f"hosted_vllm/{MODEL_NAME}",
     api_base=VLLM_API_BASE,

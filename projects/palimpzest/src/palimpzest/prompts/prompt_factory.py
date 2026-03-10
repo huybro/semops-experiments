@@ -6,6 +6,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
+# Global variable to allow custom map instruction override for experiments
+CUSTOM_MAP_INSTRUCTION_FUNC = None
+
 from palimpzest.constants import (
     LLAMA_CONTEXT_TOKENS_LIMIT,
     TOKENS_PER_CHARACTER,
@@ -1093,6 +1096,10 @@ class PromptFactory:
         if self.prompt_strategy.is_filter_prompt():
             messages = prompt_utils.get_prompt(kwargs['filter_condition'], kwargs['context'], op=base.OpName.SEM_FILTER)
         elif self.prompt_strategy.is_map_prompt():
+            if CUSTOM_MAP_INSTRUCTION_FUNC is not None:
+                lotus_instruction = CUSTOM_MAP_INSTRUCTION_FUNC(input_fields)
+                if lotus_instruction is not None:
+                    return prompt_utils.get_prompt(lotus_instruction, kwargs['context'], op=base.OpName.SEM_MAP)
             messages = prompt_utils.get_prompt(kwargs['output_fields_desc'], kwargs['context'], op=base.OpName.SEM_MAP)
         elif self.prompt_strategy.is_agg_prompt():
             messages = prompt_utils.get_prompt(kwargs['agg_instruction'], kwargs['context'], op=base.OpName.SEM_AGG)
