@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
 
 import time
 from experiment_utils_palimpzest import (
-    state, joined_df,
+    logger, joined_df,
     MAP_VERDICT,
     write_csv, pz_map_with_fallback, find_match
 )
@@ -16,9 +16,7 @@ print("  PIPELINE: map only (verdict)")
 print("=" * 60)
 
 # ── PZ ──
-state.rewrite_mode = True
-state.current_filter_instruction = None
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 pz_m_df = pz_map_with_fallback(
     MAP_VERDICT, joined_df, "verdict",
@@ -26,8 +24,7 @@ pz_m_df = pz_map_with_fallback(
     ["claim", "content"],
 )
 pz_time = time.time() - t0
-pz_cap = list(state.captured)
-state.rewrite_mode = False
+pz_cap = list(logger)
 print(f"  PZ:    {len(pz_m_df)} rows ({pz_time:.1f}s)")
 
 # ── Log ──

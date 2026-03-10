@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
 
 import time
 from experiment_utils_lotus import (
-    state, joined_df,
+    logger, joined_df,
     MAP_VERDICT,
     write_csv,
 )
@@ -16,12 +16,11 @@ print("  PIPELINE: map only (verdict)")
 print("=" * 60)
 
 # ── LOTUS ──
-state.rewrite_mode = False
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 df_m = joined_df.copy().sem_map(MAP_VERDICT, suffix="verdict")
 lotus_time = time.time() - t0
-lotus_cap = list(state.captured)
+lotus_cap = list(logger)
 print(f"  LOTUS: {len(df_m)} rows ({lotus_time:.1f}s)")
 
 # ── Log ──

@@ -6,7 +6,7 @@ import time
 import pandas as pd
 import palimpzest as pz
 from experiment_utils_palimpzest import (
-    state, joined_df, pz_config,
+    logger, joined_df, pz_config,
     FILTER_RELEVANCE, FILTER_SUPPORT,
     write_csv, find_match
 )
@@ -18,10 +18,7 @@ print("  PIPELINE: filter → filter (relevance → support)")
 print("=" * 60)
 
 # ── PZ ──
-state.rewrite_mode = True
-state.current_filter_instruction = FILTER_RELEVANCE
-state.current_filter_cols = ["claim", "content"]
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 ds1 = pz.MemoryDataset(id="cmp-ff1", vals=joined_df.to_dict("records"))
 ds1 = ds1.sem_filter(
@@ -29,11 +26,10 @@ ds1 = ds1.sem_filter(
     depends_on=["claim", "content"],
 )
 pz_ff1_df = ds1.run(config=pz_config).to_df()
-pz_f1_cap = list(state.captured)
+pz_f1_cap = list(logger)
 
 # ── PZ F2 ──
-state.current_filter_instruction = FILTER_SUPPORT
-state.captured.clear()
+logger.clear()
 if len(pz_ff1_df) > 0:
     ds2 = pz.MemoryDataset(id="cmp-ff2", vals=pz_ff1_df.to_dict("records"))
     ds2 = ds2.sem_filter(
@@ -43,9 +39,7 @@ if len(pz_ff1_df) > 0:
     pz_ff2_df = ds2.run(config=pz_config).to_df()
 else:
     pz_ff2_df = pd.DataFrame()
-pz_f2_cap = list(state.captured)
-pz_time = time.time() - t0
-state.rewrite_mode = False
+pz_f2_cap = list(logger)
 print(f"  PZ:    {len(joined_df)}→{len(pz_ff1_df)}→{len(pz_ff2_df)} ({pz_time:.1f}s)")
 
 # ── Log ──

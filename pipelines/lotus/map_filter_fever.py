@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
 
 import time
 from experiment_utils_lotus import (
-    state, joined_df,
+    logger, joined_df,
     MAP_VERDICT, FILTER_VERDICT,
     write_csv,
 )
@@ -20,18 +20,17 @@ print("  PIPELINE: map → filter (verdict → verify)")
 print("=" * 60)
 
 # ── LOTUS: map (generate verdict), then filter (verify verdict) ──
-state.rewrite_mode = False
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 
 # Step 1: sem_map — adds "verdict" column
 df_map = joined_df.copy().sem_map(MAP_VERDICT, suffix="verdict")
-lotus_map_cap = list(state.captured)
+lotus_map_cap = list(logger)
 
 # Step 2: sem_filter — should see content + claim + verdict
-state.captured.clear()
+logger.clear()
 df_filtered = df_map.sem_filter(FILTER_VERDICT)
-lotus_filter_cap = list(state.captured)
+lotus_filter_cap = list(logger)
 lotus_time = time.time() - t0
 print(f"  LOTUS: map={len(df_map)}, filter={len(df_filtered)}/{len(df_map)} ({lotus_time:.1f}s)")
 

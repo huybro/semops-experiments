@@ -9,7 +9,7 @@ import time
 import pandas as pd
 import palimpzest as pz
 from experiment_utils_palimpzest import (
-    state, joined_df, pz_config,
+    logger, joined_df, pz_config,
     MAP_VERDICT, FILTER_VERDICT,
     write_csv, pz_map_with_fallback, find_match
 )
@@ -21,10 +21,7 @@ print("  PIPELINE: map → filter (verdict → verify)")
 print("=" * 60)
 
 # ── PZ ──
-state.rewrite_mode = True
-state.current_filter_instruction = None
-state.current_map_instruction = MAP_VERDICT
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 
 # Step 1: PZ sem_map
@@ -33,13 +30,10 @@ pz_map_df = pz_map_with_fallback(
     "TRUE if the claim is supported by the evidence, FALSE otherwise.",
     ["claim", "content"],
 )
-pz_map_cap = list(state.captured)
+pz_map_cap = list(logger)
 
 # Step 2: PZ sem_filter — should see content + claim + verdict
-state.current_filter_instruction = FILTER_VERDICT
-state.current_filter_cols = ["content", "claim", "verdict"]
-state.current_map_instruction = None
-state.captured.clear()
+logger.clear()
 if len(pz_map_df) > 0:
     ds = pz.MemoryDataset(id="cmp-mf", vals=pz_map_df.to_dict("records"))
     ds = ds.sem_filter(
@@ -50,9 +44,7 @@ if len(pz_map_df) > 0:
     pz_filter_df = ds.run(config=pz_config).to_df()
 else:
     pz_filter_df = pd.DataFrame()
-pz_filter_cap = list(state.captured)
-pz_time = time.time() - t0
-state.rewrite_mode = False
+pz_filter_cap = list(logger)
 print(f"  PZ:    map={len(pz_map_df)}, filter={len(pz_filter_df)}/{len(pz_map_df)} ({pz_time:.1f}s)")
 
 # ── Log ──

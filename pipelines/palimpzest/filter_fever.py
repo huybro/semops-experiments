@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+"/..
 import time
 import palimpzest as pz
 from experiment_utils_palimpzest import (
-    state, pz_config,
+    logger, pz_config,
     FILTER_RELEVANCE, find_match
 )
 from data_utils import write_csv, load_fever
@@ -20,10 +20,7 @@ print("  PIPELINE: filter only (relevance)")
 print("=" * 60)
 
 # ── PZ ──
-state.rewrite_mode = True
-state.current_filter_instruction = FILTER_RELEVANCE
-state.current_filter_cols = ["claim", "content"]
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 joined_df = load_fever("data/fever_claims_with_evidence.csv")
 ds = pz.MemoryDataset(id="cmp-f1", vals=joined_df.to_dict("records"))
@@ -33,8 +30,7 @@ ds = ds.sem_filter(
 )
 pz_df = ds.run(config=pz_config).to_df()
 pz_time = time.time() - t0
-pz_cap = list(state.captured)
-state.rewrite_mode = False
+pz_cap = list(logger)
 print(f"  PZ:    {len(pz_df)}/{len(joined_df)} passed ({pz_time:.1f}s)")
 
 # ── Log ──
