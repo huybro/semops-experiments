@@ -15,15 +15,15 @@ Usage:
         write_csv, find_match, pz_map_with_fallback,
     )
 """
+import os
+
 import palimpzest as pz
 import litellm as _litellm
 from palimpzest.constants import Model
 from palimpzest.query.processor.config import QueryProcessorConfig
 
-from universal_prompts import (
-    get_prompt,
-    override_palimpzest_prompt
-)
+from palimpzest.prompts import prompt_factory
+from data_utils import write_csv, load_fever
 
 
 def nle2str(nle, cols):
@@ -126,7 +126,7 @@ def _get_map_instruction(input_fields):
         return nle2str(state.current_map_instruction, state.current_map_cols)
     return None
 
-override_palimpzest_prompt(get_map_instruction=_get_map_instruction)
+prompt_factory.CUSTOM_MAP_INSTRUCTION_FUNC = _get_map_instruction
 
 PZ_MODEL = Model(f"hosted_vllm/{MODEL_NAME}")
 PZ_MODEL.api_base = VLLM_API_BASE
@@ -141,6 +141,10 @@ pz_config = QueryProcessorConfig(
     allow_split_merge=False,
     verbose=False,
 )
+
+# FEVER joined_df reused across PZ pipelines
+FEVER_PATH = os.path.join("data", "fever_claims_with_evidence.csv")
+joined_df = load_fever(FEVER_PATH)
 
 
 def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
@@ -164,6 +168,7 @@ def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
             data_dict = {c: row[c] for c in cols_used}
             data = "".join(str(data_dict[c]) for c in cols_used)  # Lotus df2text format
             instr = nle2str(instruction, cols_used)
+            from palimpzest.prompts.prompt_utils import get_prompt
             msgs = get_prompt(instr, data, op='sem_map')
             res = _original_completion(
                 model=f"hosted_vllm/{MODEL_NAME}",
