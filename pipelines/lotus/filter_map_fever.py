@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
 
 import time
 from experiment_utils_lotus import (
-    state, joined_df,
+    logger, joined_df,
     FILTER_RELEVANCE, MAP_VERDICT,
     write_csv,
 )
@@ -16,14 +16,13 @@ print("  PIPELINE: filter → map (relevance → verdict)")
 print("=" * 60)
 
 # ── LOTUS: filter relevant evidence, then generate verdict ──
-state.rewrite_mode = False
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 df_fm_f = joined_df.copy().sem_filter(FILTER_RELEVANCE)
-lotus_f_cap = list(state.captured)
-state.captured.clear()
+lotus_f_cap = list(logger)
+logger.clear()
 df_fm_m = df_fm_f.sem_map(MAP_VERDICT, suffix="verdict")
-lotus_m_cap = list(state.captured)
+lotus_m_cap = list(logger)
 lotus_time = time.time() - t0
 print(f"  LOTUS: filter={len(df_fm_f)}/{len(joined_df)}, map={len(df_fm_m)} rows ({lotus_time:.1f}s)")
 

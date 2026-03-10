@@ -73,21 +73,9 @@ FILTER_VERDICT = (
 # ============================================================
 # Interceptor state (mutable, shared across pipeline steps)
 # ============================================================
-class _State:
-    """Mutable state for the litellm interceptor."""
-    def __init__(self):
-        self.captured = []
-        self.rewrite_mode = False
-        self.current_filter_instruction = None
-        self.current_filter_cols = None
-        self.current_map_instruction = None
-        self.current_map_cols = None  # input fields for map (e.g. ["claim", "content"])
-        self.debug = False  # Set to False to silence prompt logging
-        self.call_count = 0
-
-state = _State()
-
-
+logger = []
+current_map_instruction = None
+current_map_cols = []
 
 # ============================================================
 # litellm interceptor — captures PZ prompts (no rewrite needed)
@@ -110,7 +98,7 @@ def _interceptor(*args, **kwargs):
     result = _original_completion(*args, **kwargs)
     output_text = result.choices[0].message.content if result.choices else ""
 
-    state.captured.append({"input": prompt_text, "output": output_text})
+    logger.append({"input": prompt_text, "output": output_text})
     return result
 
 
@@ -122,8 +110,8 @@ _litellm.completion = _interceptor
 # ============================================================
 def _get_map_instruction(input_fields):
     """Return Lotus-style map instruction when set (for FEVER alignment with Lotus)."""
-    if state.current_map_instruction and state.current_map_cols:
-        return nle2str(state.current_map_instruction, state.current_map_cols)
+    if current_map_instruction and current_map_cols:
+        return nle2str(current_map_instruction, current_map_cols)
     return None
 
 prompt_factory.CUSTOM_MAP_INSTRUCTION_FUNC = _get_map_instruction
@@ -160,8 +148,9 @@ def find_match(row, cap_list):
 
 def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
     """Run PZ sem_map, falling back to direct LLM calls if optimizer crashes."""
-    state.current_map_instruction = instruction
-    state.current_map_cols = cols_used
+    global current_map_instruction, current_map_cols
+    current_map_instruction = instruction
+    current_map_cols = cols_used
     try:
         ds = pz.MemoryDataset(
             id=f"cmp-{col_name}",
@@ -190,7 +179,7 @@ def pz_map_with_fallback(instruction, data_df, col_name, pz_desc, cols_used):
             )
             output = res.choices[0].message.content if res.choices else ""
             outputs.append(output.strip())
-            state.captured.append({
+            logger.append({
                 "input": "\n".join(m.get("content", "") for m in msgs if isinstance(m, dict)),
                 "output": output,
                 "claim": row.get("claim", ""),

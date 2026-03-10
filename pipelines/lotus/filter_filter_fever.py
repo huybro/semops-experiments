@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
 
 import time
 from experiment_utils_lotus import (
-    state, joined_df,
+    logger, joined_df,
     FILTER_RELEVANCE, FILTER_SUPPORT,
     write_csv,
 )
@@ -16,14 +16,13 @@ print("  PIPELINE: filter → filter (relevance → support)")
 print("=" * 60)
 
 # ── LOTUS ──
-state.rewrite_mode = False
-state.captured.clear()
+logger.clear()
 t0 = time.time()
 df_ff1 = joined_df.copy().sem_filter(FILTER_RELEVANCE)
-lotus_f1_cap = list(state.captured)
-state.captured.clear()
+lotus_f1_cap = list(logger)
+logger.clear()
 df_ff2 = df_ff1.sem_filter(FILTER_SUPPORT)
-lotus_f2_cap = list(state.captured)
+lotus_f2_cap = list(logger)
 lotus_time = time.time() - t0
 print(f"  LOTUS: {len(joined_df)}→{len(df_ff1)}→{len(df_ff2)} ({lotus_time:.1f}s)")
 
