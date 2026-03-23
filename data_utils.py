@@ -118,7 +118,14 @@ def write_csv(filepath, rows):
     os.makedirs("logs", exist_ok=True)
     if not rows:
         return
+    fieldnames = []
+    seen = set()
+    for row in rows:
+        for key in row.keys():
+            if key not in seen:
+                seen.add(key)
+                fieldnames.append(key)
     with open(filepath, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+        writer = csv.DictWriter(f, fieldnames=fieldnames, restval="", extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)

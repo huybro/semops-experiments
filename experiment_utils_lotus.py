@@ -23,6 +23,7 @@ import litellm as _litellm
 from lotus.models import LM
 
 from transformers import AutoTokenizer
+from data_utils import write_csv, load_fever
 
 
 # ============================================================
@@ -52,6 +53,7 @@ FILTER_SUPPORT = (
 
 # Map: based on both claim and evidence, generate a verdict (Claim first, Evidence second)
 MAP_VERDICT = (
+    "{claim} {content}\n"
     "Explain how the claim can be supported by the evidence.\n"
     "Provide a short explanation in natural language."
 )
@@ -62,11 +64,50 @@ FILTER_VERDICT = (
     "Evidence: {content}\nClaim: {claim}\nVerdict: {verdict}"
 )
 
+# Enron filter -> filter -> map templates
+FILTER_ENRON_FRAUD = (
+    "{contents}\n"
+    'The email refers to a fraudulent scheme (i.e., "Raptor", "Deathstar", "Chewco", and/or "Fat Boy"). '
+    "Answer TRUE if it does, FALSE otherwise. Output TRUE or FALSE only.\n"
+)
+
+FILTER_ENRON_NOT_NEWS = (
+    "{contents}\n"
+    "The email is not quoting from a news article or an article written by someone outside of Enron. "
+    "Answer TRUE if it is NOT quoting such an article, FALSE otherwise. Output TRUE or FALSE only.\n"
+)
+
+MAP_ENRON_EXPLANATION = (
+    "{contents}\n"
+    "Explain briefly why this email is related to a fraudulent scheme, using the email contents provided in the context."
+)
+
 
 # ============================================================
 # Interceptor state (mutable, shared across pipeline steps)
 # ============================================================
 logger = []
+
+
+# FEVER joined_df reused across LOTUS pipelines
+FEVER_PATH = os.path.join("data", "fever_claims_with_evidence.csv")
+joined_df = load_fever(FEVER_PATH)
+
+
+def load_enron(dir_path: str) -> pd.DataFrame:
+    rows = []
+    i = 0 
+    for fname in sorted(os.listdir(dir_path)):
+        fpath = os.path.join(dir_path, fname)
+        if not os.path.isfile(fpath):
+            continue
+        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+            rows.append({"filename": fname, "contents": f.read()})
+        i += 1
+        if i == 50:
+            break
+    print(f"Loaded {len(rows)} emails from {dir_path}")
+    return pd.DataFrame(rows)
 
 # ============================================================
 # Setup — LOTUS
