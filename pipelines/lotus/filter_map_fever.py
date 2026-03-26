@@ -1,41 +1,52 @@
-"""Pipeline: sem_filter → sem_map (relevance → verdict) — LOTUS only."""
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/..')
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) + "/../.."
+LOTUS_ROOT = PROJECT_ROOT + "/projects/lotus"
+sys.path.insert(0, PROJECT_ROOT)
+sys.path.insert(0, LOTUS_ROOT)
 
 import time
-from experiment_utils_lotus import (
-    logger, joined_df,
-    FILTER_RELEVANCE, MAP_VERDICT,
-    write_csv,
+
+from pipelines import scenarios
+import lotus
+from lotus.models import LM
+from transformers import AutoTokenizer
+from pipelines import prompt_intercepter
+from data_utils import write_csv, load_fever
+
+project = 'lotus'
+MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
+MAX_TOKENS = 512
+VLLM_API_BASE = "http://localhost:8003/v1"
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+
+_lotus_lm = LM(
+    model=f"hosted_vllm/{MODEL_NAME}",
+    api_base=VLLM_API_BASE,
+    max_tokens=MAX_TOKENS,
+    temperature=0,
 )
+lotus.settings.configure(lm=_lotus_lm)
 
-_empty = {"input": "", "output": "", "claim": "", "content": ""}
 
-print("\n" + "=" * 60)
-print("  PIPELINE: filter → map (relevance → verdict)")
-print("=" * 60)
+# Load Fever data
+df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence.csv"))
+log = []
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
+prompt_intercepter.set_intercept(**params)
 
-# ── LOTUS: filter relevant evidence, then generate verdict ──
-logger.clear()
 t0 = time.time()
-df_fm_f = joined_df.copy().sem_filter(FILTER_RELEVANCE)
-lotus_f_cap = list(logger)
-logger.clear()
-df_fm_m = df_fm_f.sem_map(MAP_VERDICT, suffix="verdict")
-lotus_m_cap = list(logger)
-lotus_time = time.time() - t0
-print(f"  LOTUS: filter={len(df_fm_f)}/{len(joined_df)}, map={len(df_fm_m)} rows ({lotus_time:.1f}s)")
+input_len = len(df)
+df = df.sem_filter(scenarios.FEVER_FILTER)
+df = df.sem_map(scenarios.FEVER_MAP)
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 
-# ── Log ──
 rows = []
-for i in range(len(joined_df)):
-    row = joined_df.iloc[i]
-    lf = lotus_f_cap[i] if i < len(lotus_f_cap) else _empty
-    lm = lotus_m_cap[i] if i < len(lotus_m_cap) else _empty
+for i in range(len(log)):
     rows.append({
-        "tuple": i, "claim": row["claim"][:80], "evidence": row["content"][:80],
-        "lotus_filter_input": lf["input"], "lotus_filter_output": lf["output"],
-        "lotus_map_input": lm["input"], "lotus_map_output": lm["output"],
+        "lotus_input": log[i]["input"], "lotus_output": log[i]["output"],
     })
-write_csv("logs/lotusfilter_map_fever.csv", rows)
-print(f"  Saved logs/lotusfilter_map_fever.csv")
+
+write_csv(f"logs/{project}_filter_map_fever.csv", rows)
+print(f"  Saved logs/filter_map_fever.csv")
+

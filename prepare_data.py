@@ -14,14 +14,14 @@ import os
 
 import pandas as pd
 
-from data_loader import load_fever_claims, load_oracle_wiki_kb
+from data_utils import load_fever_claims, load_oracle_wiki_kb
 from retrieval import retrieve_for_claims
 
 
 def main():
     parser = argparse.ArgumentParser(description="Pre-retrieve FEVER evidence and save to CSV")
-    parser.add_argument("--n_claims", type=int, default=1000, help="Number of claims to load")
-    parser.add_argument("--k", type=int, default=3, help="Top-K evidence per claim")
+    parser.add_argument("--n_claims", type=int, default=2000, help="Number of claims to load")
+    parser.add_argument("--k", type=int, default=1, help="Top-K evidence per claim")
     parser.add_argument("--output", type=str, default="data/fever_claims_with_evidence.csv",
                         help="Output CSV path")
     args = parser.parse_args()

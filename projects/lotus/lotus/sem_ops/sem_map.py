@@ -4,12 +4,11 @@ import pandas as pd
 
 import lotus
 from lotus.cache import operator_cache
-from lotus.templates import task_instructions
+from lotus.templates import task_instructions, prompt_utils, base
 from lotus.types import LMOutput, ReasoningStrategy, SemanticMapOutput, SemanticMapPostprocessOutput
 from lotus.utils import show_safe_mode
 
 from .postprocessors import map_postprocess
-
 
 def sem_map(
     docs: list[dict[str, Any]],
@@ -76,24 +75,15 @@ def sem_map(
     """
 
     # prepare model inputs
-    inputs = []
-    for doc in docs:
-        prompt = task_instructions.map_formatter_custom(
-            doc,
-            user_instruction,
-        )
-        lotus.logger.debug(f"input to model: {prompt}")
-        lotus.logger.debug(f"inputs content to model: {[x.get('content') for x in prompt]}")
-        inputs.append(prompt)
 
     # check if safe_mode is enabled
-    if safe_mode:
+    if safe_mode and False:
         estimated_cost = sum(model.count_tokens(input) for input in inputs)
         estimated_LM_calls = len(docs)
         show_safe_mode(estimated_cost, estimated_LM_calls)
 
     # call model
-    lm_output: LMOutput = model(inputs, progress_bar_desc=progress_bar_desc, **model_kwargs)
+    lm_output: LMOutput = model(docs, progress_bar_desc=progress_bar_desc, **model_kwargs)
 
     # post process results
     postprocess_output = postprocessor(
@@ -232,7 +222,6 @@ class SemMapDataframe:
             if column not in self._obj.columns:
                 raise ValueError(f"Column {column} not found in DataFrame")
 
-        multimodal_data = task_instructions.df2multimodal_info(self._obj, col_li)
         formatted_usr_instr = lotus.nl_expression.nle2str(user_instruction, col_li)
 
         examples_multimodal_data = None
@@ -248,8 +237,27 @@ class SemMapDataframe:
                 return_explanations = True
                 cot_reasoning = examples["Reasoning"].tolist()
 
+        inputs = []
+        if 'prompt' in self._obj:
+            for i in range(len(self._obj['prompt'])):
+                data_prompt = self._obj['prompt'].iloc[i]
+                messages = prompt_utils.get_prompt(
+                    user_instruction, data_prompt, op=base.OpName.SEM_MAP
+                )
+                inputs.append(messages)
+        else:
+            multimodal_data = task_instructions.df2multimodal_info(self._obj, col_li)
+            for doc in multimodal_data:
+                prompt = task_instructions.map_formatter_custom(
+                    doc,
+                    user_instruction,
+                )
+                lotus.logger.debug(f"input to model: {prompt}")
+                lotus.logger.debug(f"inputs content to model: {[x.get('content') for x in prompt]}")
+                inputs.append(prompt)
+                
         output = sem_map(
-            multimodal_data,
+            inputs,
             lotus.settings.lm,
             formatted_usr_instr,
             system_prompt=system_prompt,
@@ -262,8 +270,13 @@ class SemMapDataframe:
             progress_bar_desc=progress_bar_desc,
             **model_kwargs,
         )
-
+        
+        prompts = []
+        for idx, intput_prompt in enumerate(inputs):
+            prompt = prompt_utils.add_assistant_prompt(intput_prompt, output.outputs[idx])
+            prompts.append(prompt)
         new_df = self._obj.copy()
+        new_df['prompt'] = prompts
         new_df[suffix] = output.outputs
         if return_explanations:
             new_df["explanation" + suffix] = output.explanations

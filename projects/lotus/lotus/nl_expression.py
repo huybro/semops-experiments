@@ -17,7 +17,7 @@ def parse_cols(text: str) -> list[str]:
 def nle2str(nle: str, cols: list[str]) -> str:
     dict = {}
     for col in cols:
-        dict[col] = f"{col.capitalize()}"
+        dict[col] = ""#f"{col.capitalize()}"
     return nle.format(**dict)
 
 
