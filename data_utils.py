@@ -114,6 +114,22 @@ def load_fever(DATA_PATH = "data/fever_claims_with_evidence.csv"):
     return joined_df
 
 
+def load_enron(dir_path: str) -> pd.DataFrame:
+    rows = []
+    i = 0 
+    for fname in sorted(os.listdir(dir_path)):
+        fpath = os.path.join(dir_path, fname)
+        if not os.path.isfile(fpath):
+            continue
+        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+            rows.append({"filename": fname, "contents": f.read()})
+        i += 1
+        if i == 50:
+            break
+    print(f"Loaded {len(rows)} emails from {dir_path}")
+    return pd.DataFrame(rows)
+
+
 def write_csv(filepath, rows):
     os.makedirs("logs", exist_ok=True)
     if not rows:
@@ -129,3 +145,4 @@ def write_csv(filepath, rows):
         writer = csv.DictWriter(f, fieldnames=fieldnames, restval="", extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
+
