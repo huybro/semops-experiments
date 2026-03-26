@@ -114,7 +114,7 @@ def load_fever(DATA_PATH = "data/fever_claims_with_evidence.csv"):
     return joined_df
 
 
-def load_enron(dir_path: str) -> pd.DataFrame:
+def load_enron(dir_path: str, test=False) -> pd.DataFrame:
     rows = []
     i = 0 
     for fname in sorted(os.listdir(dir_path)):
@@ -124,7 +124,7 @@ def load_enron(dir_path: str) -> pd.DataFrame:
         with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
             rows.append({"filename": fname, "contents": f.read()})
         i += 1
-        if i == 50:
+        if i == 100 and test:
             break
     print(f"Loaded {len(rows)} emails from {dir_path}")
     return pd.DataFrame(rows)

@@ -31,7 +31,7 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # -- LOTUS --
-joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"))
+joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"), test=False)
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
 llm_intercepter.set_intercept(**params)
@@ -40,16 +40,18 @@ llm_intercepter.set_intercept(**params)
 t0 = time.time()
 df_filter1 = joined_df.sem_filter(scenarios.FILTER_ENRON_FRAUD)
 df_filter2 = df_filter1.sem_filter(scenarios.FILTER_ENRON_NOT_NEWS)
+df_map = df_filter2.sem_map(scenarios.MAP_ENRON_EXPLANATION, suffix="fraud_explanation")
 lotus_time = time.time() - t0
 print(f"  LOTUS: {len(joined_df)}->{len(df_filter1)}->{len(df_filter2)} ({lotus_time:.1f}s)")
 
 # Slice logger into stages (one LM call per row per op)
 f1_len = len(df_filter1)
 f2_len = len(df_filter2)
+m_len = len(df_map)
 
 lotus_f1_cap = log[0:len(joined_df)]
 lotus_f2_cap = log[len(joined_df):len(joined_df) + f1_len]
-
+lotus_m_cap = log[len(joined_df) + f1_len:len(joined_df) + f1_len + m_len]
 
 # -- Log (wide format: one row per original email, stage outputs as columns) --
 rows = []
@@ -63,6 +65,9 @@ for i in range(len(lotus_f2_cap)):
     rows.append({"op": 'filter_2', "lotus_input": lm["input"], "lotus_output": lm["output"]})
 
 
+for i in range(len(df_map)):
+    lm = lotus_f2_cap[i]
+    rows.append({"op": 'map', "lotus_input": lm["input"], "lotus_output": lm["output"]})
 
 write_csv(f"logs/{project}_enron_filter_filter_map.csv", rows)
 print(f"  Saved logs/{project}_enron_filter_filter_map.csv")

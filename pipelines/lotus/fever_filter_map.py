@@ -10,7 +10,7 @@ from pipelines import scenarios
 import lotus
 from lotus.models import LM
 from transformers import AutoTokenizer
-from pipelines import prompt_intercepter
+from pipelines import llm_intercepter
 from data_utils import write_csv, load_fever
 
 project = 'lotus'
@@ -33,7 +33,7 @@ lotus.settings.configure(lm=_lotus_lm)
 df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence.csv"))
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
-prompt_intercepter.set_intercept(**params)
+llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 input_len = len(df)

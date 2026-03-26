@@ -10,7 +10,7 @@ from pipelines import scenarios
 import lotus
 from lotus.models import LM
 from transformers import AutoTokenizer
-from pipelines import prompt_intercepter
+from pipelines import llm_intercepter
 from data_utils import write_csv, load_fever
 
 project = 'lotus'
@@ -31,9 +31,10 @@ lotus.settings.configure(lm=_lotus_lm)
 
 # Load Fever data
 df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence.csv"))
+df = df.iloc[:5]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
-prompt_intercepter.set_intercept(**params)
+llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 input_len = len(df)
@@ -46,6 +47,6 @@ for i in range(len(log)):
         "lotus_input": log[i]["input"], "lotus_output": log[i]["output"],
     })
 
-write_csv(f"logs/{project}_filter_fever.csv", rows)
-print(f"  Saved logs/filter_fever.csv")
+write_csv(f"logs/{project}_filter_enron.csv", rows)
+print(f"  Saved logs/filter_enron.csv")
 
