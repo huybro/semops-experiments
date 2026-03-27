@@ -130,6 +130,23 @@ def load_enron(dir_path: str, test=False) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def load_arxiv(dir_path: str, column=None, test=False) -> pd.DataFrame:
+    rows = []
+    i = 0 
+    for fname in sorted(os.listdir(dir_path)):
+        fpath = os.path.join(dir_path, fname)
+        if not os.path.isfile(fpath):
+            continue
+        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+            if not column:
+                column = 'abstract'
+            rows.append({"filename": fname, column: f.read()})
+        i += 1
+        if i == 100 and test:
+            break
+    print(f"Loaded {len(rows)} abstract from {dir_path}")
+    return pd.DataFrame(rows)
+    
 def write_csv(filepath, rows):
     os.makedirs("logs", exist_ok=True)
     if not rows:

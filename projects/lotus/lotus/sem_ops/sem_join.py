@@ -728,6 +728,7 @@ class SemJoinDataframe:
 
         assert left_on is not None, "Column not found in left dataframe"
         assert right_on is not None, "Column not found in right dataframe"
+        
 
         examples_multimodal_data = None
         examples_answers = None

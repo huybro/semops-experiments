@@ -31,3 +31,23 @@ MAP_ENRON_EXPLANATION_2 = (
 )
 # ARXIV
 
+# TOPK - MAP
+CASE_1_TOPK_ARXIV = ("{abstract} Provide the most relevant papers to Image Semantic Segmentation research")
+CASE_1_MAP_ARXIV = (
+    '{abstract}Explain why is the paper relevant to Image Semantic Segmentation research'
+    )
+CASE_1_AGG_ARXIV = (
+    '{abstract}"Summarize the key common ideas and contributions across the paper abstracts"'
+    )
+
+
+
+# FILTER - JOIN - FILTER - MAP -
+
+CASE_2_FILTER_ARXIV = ("{abstract}Is the paper relevant to AI robotics research?")
+CASE_2_JOIN_ARXIV = (
+    '{abstract}{abstract2}Do these two papers study the same problem or topic?'
+)
+CASE_2_MAP_ARXIV = (
+    '{abstract}Explain their relationship in terms of shared topics, methods, and differences.'
+)
