@@ -172,7 +172,7 @@ def map_formatter_custom(
     multimodal_data: dict[str, Any],
     user_instruction: str,
 ) -> list[dict[str, str]]:
-    """Build map messages. ``user_instruction`` should be the nle2str-formatted string (placeholders removed)."""
+    """Use lotus prompt_utils directly (same pattern as filter_formatter_custom)."""
     data_prompt = prompt_utils.get_data_prompt(multimodal_data["text"])
     messages = prompt_utils.get_prompt(
         user_instruction, data_prompt, op=OpName.SEM_MAP

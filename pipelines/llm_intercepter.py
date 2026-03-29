@@ -1,12 +1,8 @@
 import litellm
 
-_original_completion = None
-
 
 def set_intercept(**params):
-    global _original_completion
-    if _original_completion is None:
-        _original_completion = litellm.completion
+    _original_completion = litellm.completion
     log = params['log']
     MAX_TOKENS = params['max_tokens']
     tokenizer = params['tokenizer']
@@ -25,5 +21,7 @@ def set_intercept(**params):
         log.append({"input": prompt_text, "output": output_text})
 
         return result
-
+    
     litellm.completion = _interceptor
+
+

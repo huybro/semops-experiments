@@ -242,7 +242,7 @@ class SemMapDataframe:
             for i in range(len(self._obj['prompt'])):
                 data_prompt = self._obj['prompt'].iloc[i]
                 messages = prompt_utils.get_prompt(
-                    formatted_usr_instr, data_prompt, op=base.OpName.SEM_MAP
+                    user_instruction, data_prompt, op=base.OpName.SEM_MAP
                 )
                 inputs.append(messages)
         else:
@@ -250,7 +250,7 @@ class SemMapDataframe:
             for doc in multimodal_data:
                 prompt = task_instructions.map_formatter_custom(
                     doc,
-                    formatted_usr_instr,
+                    user_instruction,
                 )
                 lotus.logger.debug(f"input to model: {prompt}")
                 lotus.logger.debug(f"inputs content to model: {[x.get('content') for x in prompt]}")
