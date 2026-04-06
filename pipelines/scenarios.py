@@ -32,11 +32,11 @@ MAP_ENRON_EXPLANATION_2 = (
 # ARXIV
 
 # TOPK - MAP
-CASE_1_TOPK_ARXIV = ("{abstract} Provide the most relevant papers to Image Semantic Segmentation research")
-CASE_1_MAP_ARXIV = (
+ARXIV_CASE_1_TOPK = ("{abstract} Provide the most relevant papers to Image Semantic Segmentation research")
+ARXIV_CASE_1_MAP = (
     '{abstract}Explain why is the paper relevant to Image Semantic Segmentation research'
     )
-CASE_1_AGG_ARXIV = (
+ARXIV_CASE_1_AGG = (
     '{abstract}"Summarize the key common ideas and contributions across the paper abstracts"'
     )
 
@@ -44,15 +44,21 @@ CASE_1_AGG_ARXIV = (
 
 # FILTER - JOIN - FILTER - MAP -
 
-CASE_2_FILTER_ARXIV = ("{abstract}Is the paper relevant to AI robotics research?")
-CASE_2_JOIN_ARXIV = (
-    '{abstract}{robotic_abstract}Do these two papers study the same problem or topic?'
+ARXIV_CASE_2_FILTER = ("{abstract}Is the paper relevant to AI robotics research?")
+ARXIV_CASE_2_JOIN = (
+    '{abstract}{robotic_abstract}Do these two papers study similar topic?'
 )
-CASE_2_MAP_ARXIV = (
+ARXIV_CASE_2_MAP = (
     '{abstract}Explain their relationship in terms of shared topics, methods, and differences.'
 )
 
-CASE_3_FILTER_1 = ("{abstract}Is this abstract about AI or machine learning?")
-CASE_3_FILTER_2 = ("{abstract}Is this abstract describing theoretical work?")
-CASE_3_FILTER_3 = ("{abstract}Does this abstract mention using an image dataset?")
-CASE_3_MAP_ARXIV = ("{abstract}Summarize the abstract in 1–2 sentences, focusing on the main method and key result.")
+ARXIV_CASE_3_FILTER_1 = ("{abstract}Is this abstract about AI or machine learning?")
+ARXIV_CASE_3_FILTER_2 = ("{abstract}Is this abstract describing theoretical work?")
+ARXIV_CASE_3_FILTER_3 = ("{abstract}Does this abstract mention using an image dataset?")
+ARXIV_CASE_3_MAP = ("{abstract}Summarize the abstract in 1–2 sentences, focusing on the main method and key result.")
+
+#MOVIE PLOT
+RESUME_CASE_1_FILTER = ("{resume}Does this candidate programming experience?")
+RESUME_CASE_1_JOIN = ("{resume}{job}Is this candidate suitable for this position?")
+RESUME_CASE_2_MAP = ("{resume}{job}Explain why this candidate is suitable for the position briefly")
+

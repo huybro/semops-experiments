@@ -30,10 +30,10 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_500")
+df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_200")
 df_robotic = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_robotic", column="robotic_abstract")
-df = df.iloc[:50]
-df_robotic = df_robotic.iloc[:1]
+# df = df.iloc[:50]
+# df_robotic = df_robotic.iloc[:1]
 
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
@@ -41,8 +41,12 @@ llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 input_len = len(df)
-df = df.sem_filter(scenarios.CASE_2_FILTER_ARXIV)
-df = df.sem_join(df_robotic, scenarios.CASE_2_JOIN_ARXIV)
+df = df.sem_filter(scenarios.ARXIV_CASE_2_FILTER)
+for _, row in df.iterrows():
+    print(row["filename"])
+print(len(df))
+df = df.sem_join(df_robotic, scenarios.ARXIV_CASE_2_JOIN)
+print(len(df))
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 
 rows = []
@@ -53,4 +57,3 @@ for i in range(len(log)):
 
 write_csv(f"logs/{project}_topk_map_arxiv.csv", rows)
 print(f"  Saved logs/{project}_topk_map_arxiv.csv")
-

@@ -29,7 +29,7 @@ def sem_join(
     default: bool = True,
     strategy: ReasoningStrategy | None = None,
     safe_mode: bool = False,
-    show_progress_bar: bool = True,
+    show_progress_bar: bool = False,
     progress_bar_desc: str = "Join comparisons",
 ) -> SemanticJoinOutput:
     """

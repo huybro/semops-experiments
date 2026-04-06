@@ -184,21 +184,20 @@ class Generator(Generic[ContextType, InputType]):
 
     def _check_bool_answer_text(self, answer_text: str, throw_exception: bool=False) -> dict | None:
         """
-        Return {"passed_operator": True} if and only if "true" is in the answer text.
         Return {"passed_operator": False} if and only if "false" is in the answer text.
-        Otherwise, raise an exception.
+        Otherwise, return {"passed_operator": True} for any non-empty answer text.
+        Raise an exception only when there is no answer text to inspect and requested.
         """
         # NOTE: we may be able to eliminate this condition by specifying this JSON output in the prompt;
         # however, that would also need to coincide with a change to allow the parse_answer_fn to set "passed_operator"
-        if "true" in answer_text.lower():
-            return {"passed_operator": True}
-        elif "false" in answer_text.lower():
+        if not answer_text:
+            if throw_exception:
+                raise Exception(f"Could not parse answer from completion text: {answer_text}")
+            return None
+
+        if "false" in answer_text.lower():
             return {"passed_operator": False}
-
-        if throw_exception:
-            raise Exception(f"Could not parse answer from completion text: {answer_text}")
-
-        return None
+        return {"passed_operator": True}
 
     def _parse_convert_answer(self, completion_text: str, fields: dict[str, FieldInfo], json_output: bool) -> dict[str, list]:
         """Extract the answer from the completion object for convert operations."""

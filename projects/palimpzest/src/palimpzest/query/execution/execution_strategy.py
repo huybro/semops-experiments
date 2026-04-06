@@ -89,7 +89,7 @@ class SentinelExecutionStrategy(BaseExecutionStrategy, ABC):
         sample_cost_budget: float | None = None,
         priors: dict | None = None,
         use_final_op_quality: bool = False,
-        seed: int = 42,
+        seed: int | None = None,
         exp_name: str | None = None,
         dont_use_priors: bool = False,
         *args,

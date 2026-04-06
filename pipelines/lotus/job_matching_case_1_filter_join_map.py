@@ -11,11 +11,11 @@ import lotus
 from lotus.models import LM
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
-from data_utils import write_csv, load_arxiv
+from data_utils import write_csv, load
 
 project = 'lotus'
 MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
-MAX_TOKENS = 512
+MAX_TOKENS = 8192
 VLLM_API_BASE = "http://localhost:8003/v1"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -25,25 +25,26 @@ _lotus_lm = LM(
     api_base=VLLM_API_BASE,
     max_tokens=MAX_TOKENS,
     temperature=0,
+    seed=None,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_500")
-# df = df.iloc[:100]
+df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20', column='resume')
+df_job = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20', column='job')
+# df_resume = df_resume.iloc[:20]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
-input_len = len(df)
-df = df.sem_filter(scenarios.ARXIV_CASE_3_FILTER_1)
-df = df.sem_filter(scenarios.ARXIV_CASE_3_FILTER_2)
-df = df.sem_filter(scenarios.ARXIV_CASE_3_FILTER_3)
-df = df.sem_map(scenarios.ARXIV_CASE_3_MAP)
-print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
-
+input_len = len(df_resume)
+df = df_resume.sem_filter(scenarios.RESUME_CASE_1_FILTER)
+df = df.sem_join(df_job, scenarios.RESUME_CASE_1_JOIN)
+df = df.sem_map(scenarios.RESUME_CASE_2_MAP)
+print(len(df))
+print(f"  LOTUS: {len(df_resume)}/{input_len} passed ({time.time() - t0:.1f}s)")
 rows = []
 for i in range(len(log)):
     rows.append({

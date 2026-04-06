@@ -38,7 +38,7 @@ llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 input_len = len(df)
-df = df.sem_filter(scenarios.CASE_2_FILTER_ARXIV)
+df = df.sem_filter(scenarios.ARXIV_CASE_2_FILTER)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 
 rows = []
@@ -49,4 +49,3 @@ for i in range(len(log)):
 
 write_csv(f"logs/{project}_topk_map_arxiv.csv", rows)
 print(f"  Saved logs/{project}_topk_map_arxiv.csv")
-

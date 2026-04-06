@@ -1,0 +1,81 @@
+import sys, os
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) + "/../.."
+LOTUS_ROOT = PROJECT_ROOT + "/projects/palimpzest/src"
+sys.path.insert(0, PROJECT_ROOT)
+sys.path.insert(0, LOTUS_ROOT)
+
+
+import time
+import palimpzest as pz
+from palimpzest.constants import Model
+
+from pipelines import scenarios
+
+from transformers import AutoTokenizer
+from pipelines import llm_intercepter
+from data_utils import write_csv, load
+from palimpzest.query.processor.config import QueryProcessorConfig
+
+project = 'palimpzest'
+MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
+MAX_TOKENS = 512
+VLLM_API_BASE = "http://localhost:8003/v1"
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+PZ_MODEL = Model(f"hosted_vllm/{MODEL_NAME}")
+pz_config = QueryProcessorConfig(
+    api_base=VLLM_API_BASE,
+    available_models=[PZ_MODEL],
+    allow_model_selection=False,
+    allow_bonded_query=True,
+    allow_rag_reduction=False,
+    allow_mixtures=False,
+    allow_critic=False,
+    allow_split_merge=False,
+    seed=None,
+    verbose=False,
+)
+
+df_resume = load(
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20",
+    column="resume",
+)
+df_job = load(
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20",
+    column="job",
+)
+
+log = []
+params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer, "seed": None}
+llm_intercepter.set_intercept(**params)
+
+t0 = time.time()
+
+resume_ds = pz.MemoryDataset(id="resume-filter", vals=df_resume.to_dict("records"))
+filtered_ds = resume_ds.sem_filter(
+    scenarios.RESUME_CASE_1_FILTER.replace("{resume}", ""),
+    depends_on=["resume"],
+)
+filtered_df = filtered_ds.run(config=pz_config).to_df()
+
+resume_ds = pz.MemoryDataset(id="resume-join", vals=filtered_df.to_dict("records"))
+job_ds = pz.MemoryDataset(id="job-join", vals=df_job.to_dict("records"))
+joined_ds = resume_ds.sem_join(
+    job_ds,
+    condition=scenarios.RESUME_CASE_1_JOIN,
+    depends_on=["resume", "job"],
+)
+result_df = joined_ds.run(config=pz_config).to_df()
+
+pz_time = time.time() - t0
+print(len(result_df))
+print(f"  PZ:    {len(result_df)}/{len(df_resume)} passed ({pz_time:.1f}s)")
+
+rows = []
+for i in range(len(log)):
+    rows.append({
+        "pz_input": log[i]["input"], "pz_output": log[i]["output"],
+    })
+
+write_csv(f"logs/{project}_job_matching_case_1_filter_join_map.csv", rows)
+print(f"  Saved logs/{project}_job_matching_case_1_filter_join_map.csv")

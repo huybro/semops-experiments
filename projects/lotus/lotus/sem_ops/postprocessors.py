@@ -202,13 +202,18 @@ def filter_postprocess(
             lotus.logger.info(f"\t Failed to parse {answer}: defaulting to {default}")
             return default
 
-        if "true" in answer.strip().lower():
-            return True
-        elif "false" in answer.strip().lower():
+        if "false" in answer.strip().lower():
             return False
         else:
-            lotus.logger.info(f"\t Failed to parse {answer}: defaulting to {default}")
-            return default
+            return True
+        # else:
+        #     lotus.logger.info(f"\t Failed to parse {answer}: defaulting to {default}")
+        #     return default
+        # elif "false" in answer.strip().lower():
+        #     return False
+        # else:
+        #     lotus.logger.info(f"\t Failed to parse {answer}: defaulting to {default}")
+        #     return default
 
     postprocessor = get_cot_postprocessor(model)
     outputs, explanations = postprocessor(llm_answers)

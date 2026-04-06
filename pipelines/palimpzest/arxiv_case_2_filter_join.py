@@ -46,7 +46,7 @@ t0 = time.time()
 ds = pz.MemoryDataset(id="cmp-f1", vals=df.to_dict("records"))
 
 _ds = ds.sem_filter(
-    scenarios.CASE_2_FILTER_ARXIV.replace('{abstract}', ""),
+    scenarios.ARXIV_CASE_2_FILTER.replace('{abstract}', ""),
     depends_on=["abstract"],
 )
 pz_df = _ds.run(config=pz_config).to_df()
@@ -55,7 +55,7 @@ pz_df = _ds.run(config=pz_config).to_df()
 ds = pz.MemoryDataset(id="cmp-f1", vals=pz_df.to_dict("records"))
 _ds = ds.sem_join(
     ds,
-    condition=scenarios.CASE_2_JOIN_ARXIV.replace('{abstract}{abstract2}', ""),
+    condition=scenarios.ARXIV_CASE_2_JOIN.replace('{abstract}{abstract2}', ""),
     depends_on=["abstract"],
 )
 pz_df = _ds.run(config=pz_config).to_df()

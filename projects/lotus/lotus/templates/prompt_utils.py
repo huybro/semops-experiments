@@ -57,31 +57,33 @@ def get_system_prompt():
 
 
 def get_data_prompt(data, right_data=None):    
+    data = data.rstrip()
+    messages = [{
+        "role": "user",
+        "type": "text",
+        "content": (
+            "CONTEXT:\n"
+            "  {\n"
+            f"    \"text\": {data}\n"
+            "  }\n"
+        ),
+    }]
 
     if right_data:
-        context = (
-            "CONTEXT:\n"
-            "  {\n"
-            f"    \"text\": {data}\n"
-            "  }\n"
-        )
-        for idx, item in enumerate(right_data):
-            context += (
-                "\n\n"
-                f"CONTEXT:\n"
-                "  {\n"
-                f"    \"text\": {item}\n"
-                "  }\n"
-            )
-    else:
-        context = (
-            "CONTEXT:\n"
-            "  {\n"
-            f"    \"text\": {data}\n"
-            "  }\n"
-        )
+        for item in right_data:
+            item = item.rstrip()
+            messages.append({
+                "role": "user",
+                "type": "text",
+                "content": (
+                    "CONTEXT:\n"
+                    "  {\n"
+                    f"    \"text\": {item}\n"
+                    "  }\n"
+                ),
+            })
 
-    return [{"role": "user", "type": "text", "content": context}]
+    return messages
 
 
 def get_task_prompt(instruction, op=OpName.SEM_FILTER):

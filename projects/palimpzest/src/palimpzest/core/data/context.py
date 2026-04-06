@@ -270,20 +270,19 @@ class TextFileContext(Context):
         )
     def _check_filter_answer_text(self, answer_text: str) -> dict | None:
         """
-        Return {"passed_operator": True} if and only if "true" is in the answer text.
         Return {"passed_operator": False} if and only if "false" is in the answer text.
-        Otherwise, return None.
+        Otherwise, return {"passed_operator": True} for any non-empty answer text.
+        Return None only when there is no answer text to inspect.
         """
         # NOTE: we may be able to eliminate this condition by specifying this JSON output in the prompt;
         # however, that would also need to coincide with a change to allow the parse_answer_fn to set "passed_operator"
-        if "true" in answer_text.lower():
-            return {"passed_operator": True}
-        elif "false" in answer_text.lower():
-            return {"passed_operator": False}
-        elif "yes" in answer_text.lower():
-            return {"passed_operator": True}
+        if not answer_text:
+            return None
 
-        return None
+        if "false" in answer_text.lower():
+            return {"passed_operator": False}
+
+        return {"passed_operator": True}
 
     def _parse_filter_answer(self, completion_text: str) -> dict[str, list]:
         """Extract the answer from the completion object for filter operations."""

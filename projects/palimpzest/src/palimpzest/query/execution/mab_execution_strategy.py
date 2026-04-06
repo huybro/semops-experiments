@@ -41,7 +41,7 @@ class OpFrontier:
             source_indices: list[tuple],
             k: int,
             j: int,
-            seed: int,
+            seed: int | None,
             policy: Policy,
             priors: dict | None = None,
             dont_use_priors: bool = False,
@@ -188,7 +188,7 @@ class OpFrontier:
 
         return naive_priors
 
-    def _get_op_index_order(self, op_set: list[PhysicalOperator], seed: int) -> list[int]:
+    def _get_op_index_order(self, op_set: list[PhysicalOperator], seed: int | None) -> list[int]:
         """
         Returns a list of indices for the operators in the op_set.
         """
