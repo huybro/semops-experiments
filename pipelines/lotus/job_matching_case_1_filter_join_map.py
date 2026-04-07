@@ -12,11 +12,11 @@ from lotus.models import LM
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
 from data_utils import write_csv, load
+from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
-MAX_TOKENS = 8192
-VLLM_API_BASE = "http://localhost:8003/v1"
+MAX_TOKENS = 512
+MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 
@@ -25,6 +25,7 @@ _lotus_lm = LM(
     api_base=VLLM_API_BASE,
     max_tokens=MAX_TOKENS,
     temperature=0,
+    top_p=1,
     seed=None,
 )
 lotus.settings.configure(lm=_lotus_lm)
@@ -41,7 +42,11 @@ llm_intercepter.set_intercept(**params)
 t0 = time.time()
 input_len = len(df_resume)
 df = df_resume.sem_filter(scenarios.RESUME_CASE_1_FILTER)
+print(len(df))
+print(f"  LOTUS: {len(df_resume)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_join(df_job, scenarios.RESUME_CASE_1_JOIN)
+print(len(df))
+print(f"  LOTUS: {len(df_resume)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_map(scenarios.RESUME_CASE_2_MAP)
 print(len(df))
 print(f"  LOTUS: {len(df_resume)}/{input_len} passed ({time.time() - t0:.1f}s)")

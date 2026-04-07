@@ -12,8 +12,6 @@ from rich.progress import (
     SpinnerColumn,
     TaskProgressColumn,
     TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
 )
 from rich.progress import Progress as RichProgress
 from rich.table import Table
@@ -71,8 +69,8 @@ class ProgressManager(ABC):
             BarColumn(),
             TaskProgressColumn(),
             MofNCompleteColumn(),
-            TimeElapsedColumn(),
-            TimeRemainingColumn(),
+            TextColumn("[cyan]Elapsed: {task.fields[elapsed_s]:.2f}s"),
+            TextColumn("[magenta]ETA: {task.fields[remaining_s]:.2f}s"),
             #TextColumn("[green]Success: {task.fields[success]}"),
             #TextColumn("[red]Failed: {task.fields[failed]}"),
             #TextColumn("[cyan]Mem: {task.fields[memory]:.1f}MB"),
@@ -189,6 +187,8 @@ class PZProgressManager(ProgressManager):
             failed=0,
             memory=0.0,
             recent="",
+            elapsed_s=0.0,
+            remaining_s=0.0,
         )
 
         # store the mapping of operator ID to task ID
@@ -247,6 +247,12 @@ class PZProgressManager(ProgressManager):
                 next_op, next_unique_full_op_id = self.unique_full_op_id_to_next_op_and_id[next_unique_full_op_id]
 
         # advance the progress bar for this task
+        elapsed_s = time.time() - self.unique_full_op_id_to_stats[unique_full_op_id].start_time
+        completed = self.progress._tasks[task].completed + num_inputs
+        total = max(float(self.get_task_total(unique_full_op_id)), 1.0)
+        rate = completed / elapsed_s if elapsed_s > 0 else 0.0
+        remaining_s = max((total - completed) / rate, 0.0) if rate > 0 else 0.0
+
         self.progress.update(
             task,
             advance=num_inputs,
@@ -256,6 +262,8 @@ class PZProgressManager(ProgressManager):
             failed=self.unique_full_op_id_to_stats[unique_full_op_id].failure_count,
             memory=get_memory_usage(),
             recent=f"{self.unique_full_op_id_to_stats[unique_full_op_id].recent_text}" if display_text is not None else "",
+            elapsed_s=elapsed_s,
+            remaining_s=remaining_s,
             refresh=True,
         )
 

@@ -14,12 +14,12 @@ from pipelines import scenarios
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
 from data_utils import write_csv, load_enron
+from pipelines.cli_utils import parse_vllm_args
 from palimpzest.query.processor.config import QueryProcessorConfig
 
 project = 'palimpzest'
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 MAX_TOKENS = 512
-VLLM_API_BASE = "http://localhost:8003/v1"
+MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 PZ_MODEL = Model(f"hosted_vllm/{MODEL_NAME}")
@@ -32,12 +32,13 @@ pz_config = QueryProcessorConfig(
     allow_mixtures=False,
     allow_critic=False,
     allow_split_merge=False,
+    seed=None,
     verbose=False,
 )
 
 # Load Fever data
 df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"))
-df = df.iloc[:5]
+# df = df.iloc[:5]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
 llm_intercepter.set_intercept(**params)

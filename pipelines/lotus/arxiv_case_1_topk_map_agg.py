@@ -12,11 +12,11 @@ from lotus.models import LM
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
 from data_utils import write_csv, load_arxiv
+from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 MAX_TOKENS = 512
-VLLM_API_BASE = "http://localhost:8003/v1"
+MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 
@@ -25,12 +25,14 @@ _lotus_lm = LM(
     api_base=VLLM_API_BASE,
     max_tokens=MAX_TOKENS,
     temperature=0,
+    top_p=1,
+    seed=None,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_50")
+df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_500")
 df = df.iloc[:10]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
@@ -38,8 +40,10 @@ llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 input_len = len(df)
-df = df.sem_topk(scenarios.ARXIV_CASE_1_TOPK, K=5)
+df = df.sem_topk(scenarios.ARXIV_CASE_1_TOPK, K=20)
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_map(scenarios.ARXIV_CASE_1_MAP)
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_agg(scenarios.ARXIV_CASE_1_AGG)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 

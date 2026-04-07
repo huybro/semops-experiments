@@ -12,12 +12,12 @@ from lotus.models import LM
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
 from data_utils import write_csv, load_enron
+from pipelines.cli_utils import parse_vllm_args
 
 
 project = 'lotus'
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 MAX_TOKENS = 512
-VLLM_API_BASE = "http://localhost:8003/v1"
+MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 
@@ -26,12 +26,14 @@ _lotus_lm = LM(
     api_base=VLLM_API_BASE,
     max_tokens=MAX_TOKENS,
     temperature=0,
+    top_p=1,
+    seed=None,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
 
 # -- LOTUS --
-joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"), test=True)
+joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"), test=False)
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
 llm_intercepter.set_intercept(**params)
@@ -39,8 +41,14 @@ llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 df_filter1 = joined_df.sem_filter(scenarios.FILTER_ENRON_FRAUD_2)
+lotus_time = time.time() - t0
+print(f"{lotus_time:.1f}s")
 df_filter2 = df_filter1.sem_filter(scenarios.FILTER_ENRON_NOT_NEWS_2)
+lotus_time = time.time() - t0
+print(f"{lotus_time:.1f}s")
 df_map = df_filter2.sem_map(scenarios.MAP_ENRON_EXPLANATION_2, suffix="fraud_explanation")
+lotus_time = time.time() - t0
+print(f"{lotus_time:.1f}s")
 lotus_time = time.time() - t0
 print(f"  LOTUS: {len(joined_df)}->{len(df_filter1)}->{len(df_filter2)} ({lotus_time:.1f}s)")
 

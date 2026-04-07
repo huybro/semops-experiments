@@ -3,7 +3,8 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) + "/../.."
 LOTUS_ROOT = PROJECT_ROOT + "/projects/palimpzest/src"
 sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, LOTUS_ROOT)
-
+import pandas as pd
+pd.set_option('display.max_rows', None)
 
 import time
 import palimpzest as pz
@@ -13,7 +14,7 @@ from pipelines import scenarios
 
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
-from data_utils import write_csv, load_arxiv
+from data_utils import write_csv, load_enron
 from pipelines.cli_utils import parse_vllm_args
 from palimpzest.query.processor.config import QueryProcessorConfig
 
@@ -37,27 +38,24 @@ pz_config = QueryProcessorConfig(
 )
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_500")
+df = load_enron(os.path.join(PROJECT_ROOT, "/home/hojaeson_umass_edu/project/vllm-test/ref/lotus-experiment/enron-eval-number-test"), test=False)
+# df = df.iloc[:1]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 ds = pz.MemoryDataset(id="cmp-f1", vals=df.to_dict("records"))
+ds = ds.sem_filter(
+    scenarios.FILTER_ENRON_FRAUD_2,
+    depends_on=["contents"],
+)
+# ds = ds.sem_map(
+#     cols=[{"name": "map2", "type": str, "desc": scenarios.MAP_ENRON_EXPLANATION}],
+#     depends_on=["map"],
+# )
 
-_ds = ds.sem_filter(
-    scenarios.ARXIV_CASE_3_FILTER_1.replace('{abstract}', ""),
-    depends_on=["abstract"],
-)
-_ds = _ds.sem_filter(
-    scenarios.ARXIV_CASE_3_FILTER_2.replace('{abstract}', ""),
-    depends_on=["abstract"],
-)
-_ds = _ds.sem_filter(
-    scenarios.ARXIV_CASE_3_FILTER_3.replace('{abstract}', ""),
-    depends_on=["abstract"],
-)
-pz_df = _ds.run(config=pz_config).to_df()
+pz_df = ds.run(config=pz_config).to_df()
 pz_time = time.time() - t0
 pz_cap = list(log)
 print(f"  PZ:    {len(pz_df)}/{len(df)} passed ({pz_time:.1f}s)")
@@ -68,5 +66,5 @@ for i in range(len(log)):
     rows.append({ 
         "pz_input": log[i]["input"], "pz_output": log[i]["output"],
     })
-write_csv(f"logs/{project}_arxiv_topk_map.csv", rows)
-print(f"  Saved logs/{project}_arxiv_topk_map.csv")
+write_csv(f"logs/{project}_enron_filter_filter_map_2.csv", rows)
+print(f"  Saved logs/{project}_enron_filter_filter_map_2.csv")

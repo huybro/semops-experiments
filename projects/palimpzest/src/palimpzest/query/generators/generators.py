@@ -322,7 +322,11 @@ class Generator(Generic[ContextType, InputType]):
         try:
             completion_kwargs = {}
             if not self.model.is_o_model() and not self.model.is_gpt_5_model():
-                completion_kwargs = {"temperature": kwargs.get("temperature", 0.0), **completion_kwargs}
+                completion_kwargs = {
+                    "temperature": kwargs.get("temperature", 0.0),
+                    "top_p": kwargs.get("top_p", 1.0),
+                    **completion_kwargs,
+                }
             if is_audio_op:
                 completion_kwargs = {"modalities": ["text"], **completion_kwargs}
             if self.model.is_reasoning_model():

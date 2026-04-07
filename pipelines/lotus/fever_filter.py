@@ -12,11 +12,11 @@ from lotus.models import LM
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
 from data_utils import write_csv, load_fever
+from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
-MODEL_NAME = "meta-llama/Llama-3.2-3B-Instruct"
 MAX_TOKENS = 512
-VLLM_API_BASE = "http://localhost:8003/v1"
+MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 
@@ -25,6 +25,8 @@ _lotus_lm = LM(
     api_base=VLLM_API_BASE,
     max_tokens=MAX_TOKENS,
     temperature=0,
+    top_p=1,
+    seed=None,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
@@ -49,4 +51,3 @@ for i in range(len(log)):
 
 write_csv(f"logs/{project}_filter_fever.csv", rows)
 print(f"  Saved logs/filter_fever.csv")
-
