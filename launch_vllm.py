@@ -4,7 +4,10 @@ import argparse
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
+
+import requests
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -81,7 +84,33 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Extra argument to pass through to vLLM. Repeat as needed.",
     )
+    parser.add_argument(
+        "--warmup",
+        action="store_true",
+        help="Send a warmup request after server starts.",
+    )
     return parser
+
+
+def warmup_request(host: str, port: int, model: str) -> None:
+    url = f"http://{host}:{port}/v1/chat/completions"
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": "Hello"}],
+        "max_tokens": 1,
+    }
+
+    for _ in range(60):
+        try:
+            r = requests.post(url, json=payload, timeout=5)
+            if r.status_code == 200:
+                print("Warmup successful")
+                return
+        except Exception:
+            pass
+        time.sleep(1)
+
+    print("Warmup failed")
 
 
 def main() -> int:
@@ -131,8 +160,12 @@ def main() -> int:
     print(f"cwd={repo_root}")
     sys.stdout.flush()
 
-    completed = subprocess.run(cmd, cwd=repo_root, env=env, check=False)
-    return completed.returncode
+    proc = subprocess.Popen(cmd, cwd=repo_root, env=env)
+
+    if args.warmup:
+        warmup_request(args.host, args.port, args.model)
+
+    return proc.wait()
 
 
 if __name__ == "__main__":
