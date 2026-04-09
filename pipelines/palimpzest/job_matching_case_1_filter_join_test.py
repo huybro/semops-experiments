@@ -34,7 +34,6 @@ pz_config = QueryProcessorConfig(
     allow_split_merge=False,
     seed=42,
     verbose=False,
-    progress=False,
 )
 
 df_resume = load(
