@@ -26,7 +26,7 @@ _lotus_lm = LM(
     max_tokens=MAX_TOKENS,
     temperature=0,
     top_p=1,
-    seed=None,
+    seed=42,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
@@ -36,13 +36,15 @@ df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/
 df_robotic = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_robotic", column="robotic_abstract")
 # df = df.iloc[:100]
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
 input_len = len(df)
 df = df.sem_filter(scenarios.ARXIV_CASE_2_FILTER) 
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_join(df_robotic, scenarios.ARXIV_CASE_2_JOIN)
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_map(scenarios.ARXIV_CASE_2_MAP)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 
@@ -52,5 +54,6 @@ for i in range(len(log)):
         "lotus_input": log[i]["input"], "lotus_output": log[i]["output"],
     })
 
-write_csv(f"logs/{project}_topk_map_arxiv.csv", rows)
-print(f"  Saved logs/{project}_topk_map_arxiv.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")

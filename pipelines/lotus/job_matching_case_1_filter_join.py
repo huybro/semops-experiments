@@ -15,7 +15,7 @@ from data_utils import write_csv, load
 from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
-MAX_TOKENS = 8192
+MAX_TOKENS = 512
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -26,7 +26,7 @@ _lotus_lm = LM(
     max_tokens=MAX_TOKENS,
     temperature=0,
     top_p=1,
-    seed=None,
+    seed=42,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
@@ -36,7 +36,7 @@ df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhaw
 df_job = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20', column='job')
 # df_resume = df_resume.iloc[:20]
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
@@ -53,5 +53,6 @@ for i in range(len(log)):
         "lotus_input": log[i]["input"], "lotus_output": log[i]["output"],
     })
 
-write_csv(f"logs/{project}_filter_map_arxiv.csv", rows)
-print(f"  Saved logs/{project}_filter_map_arxiv.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")

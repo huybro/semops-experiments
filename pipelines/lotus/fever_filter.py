@@ -26,7 +26,7 @@ _lotus_lm = LM(
     max_tokens=MAX_TOKENS,
     temperature=0,
     top_p=1,
-    seed=None,
+    seed=42,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
@@ -35,7 +35,7 @@ lotus.settings.configure(lm=_lotus_lm)
 df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence.csv"))
 print(f'len(df): {len(df)}')
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
@@ -49,5 +49,6 @@ for i in range(len(log)):
         "lotus_input": log[i]["input"], "lotus_output": log[i]["output"],
     })
 
-write_csv(f"logs/{project}_filter_fever.csv", rows)
-print(f"  Saved logs/filter_fever.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")

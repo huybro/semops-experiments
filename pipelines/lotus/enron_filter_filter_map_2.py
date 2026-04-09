@@ -27,7 +27,7 @@ _lotus_lm = LM(
     max_tokens=MAX_TOKENS,
     temperature=0,
     top_p=1,
-    seed=None,
+    seed=42,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
@@ -35,7 +35,7 @@ lotus.settings.configure(lm=_lotus_lm)
 # -- LOTUS --
 joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"), test=False)
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)
 
 
@@ -77,5 +77,6 @@ for i in range(len(df_map)):
     lm = lotus_f2_cap[i]
     rows.append({"op": 'map', "lotus_input": lm["input"], "lotus_output": lm["output"]})
 
-write_csv(f"logs/{project}_enron_filter_filter_map.csv", rows)
-print(f"  Saved logs/{project}_enron_filter_filter_map_2.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")

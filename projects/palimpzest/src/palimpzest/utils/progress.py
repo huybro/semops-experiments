@@ -71,6 +71,7 @@ class ProgressManager(ABC):
             MofNCompleteColumn(),
             TextColumn("[cyan]Elapsed: {task.fields[elapsed_s]:.2f}s"),
             TextColumn("[magenta]ETA: {task.fields[remaining_s]:.2f}s"),
+            TextColumn("[yellow]Passed: {task.fields[passed]}"),
             #TextColumn("[green]Success: {task.fields[success]}"),
             #TextColumn("[red]Failed: {task.fields[failed]}"),
             #TextColumn("[cyan]Mem: {task.fields[memory]:.1f}MB"),
@@ -183,6 +184,7 @@ class PZProgressManager(ProgressManager):
             f"[blue]{op_str}", 
             total=total,
             cost=0.0,
+            passed=0,
             success=0,
             failed=0,
             memory=0.0,
@@ -249,6 +251,7 @@ class PZProgressManager(ProgressManager):
         # advance the progress bar for this task
         elapsed_s = time.time() - self.unique_full_op_id_to_stats[unique_full_op_id].start_time
         completed = self.progress._tasks[task].completed + num_inputs
+        passed = self.progress._tasks[task].fields.get("passed", 0) + num_outputs
         total = max(float(self.get_task_total(unique_full_op_id)), 1.0)
         rate = completed / elapsed_s if elapsed_s > 0 else 0.0
         remaining_s = max((total - completed) / rate, 0.0) if rate > 0 else 0.0
@@ -258,6 +261,7 @@ class PZProgressManager(ProgressManager):
             advance=num_inputs,
             description=f"[bold blue]{self.get_task_description(unique_full_op_id)}",
             cost=self.unique_full_op_id_to_stats[unique_full_op_id].total_cost,
+            passed=passed,
             success=self.unique_full_op_id_to_stats[unique_full_op_id].success_count,
             failed=self.unique_full_op_id_to_stats[unique_full_op_id].failure_count,
             memory=get_memory_usage(),

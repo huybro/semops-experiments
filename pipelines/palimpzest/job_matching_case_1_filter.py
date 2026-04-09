@@ -32,7 +32,7 @@ pz_config = QueryProcessorConfig(
     allow_mixtures=False,
     allow_critic=False,
     allow_split_merge=False,
-    seed=None,
+    seed=42,
     verbose=False,
 )
 
@@ -46,7 +46,7 @@ df_job = load(
 )
 
 log = []
-params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer, "seed": None}
+params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer, "seed": 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
@@ -58,6 +58,7 @@ filtered_ds = resume_ds.sem_filter(
 )
 filtered_ds = filtered_ds.run(config=pz_config).to_df()
 
+print(filtered_ds)
 pz_time = time.time() - t0
 print(len(filtered_ds))
 print(f"  PZ:    {len(filtered_ds)}/{len(df_resume)} passed ({pz_time:.1f}s)")
@@ -68,5 +69,6 @@ for i in range(len(log)):
         "pz_input": log[i]["input"], "pz_output": log[i]["output"],
     })
 
-write_csv(f"logs/{project}_job_matching_case_1_filter_join_map.csv", rows)
-print(f"  Saved logs/{project}_job_matching_case_1_filter_join_map.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")

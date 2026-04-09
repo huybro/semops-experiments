@@ -32,21 +32,21 @@ pz_config = QueryProcessorConfig(
     allow_mixtures=False,
     allow_critic=False,
     allow_split_merge=False,
-    seed=None,
+    seed=42,
     verbose=False,
 )
 
 df_resume = load(
-    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_1",
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20",
     column="resume",
 )
 df_job = load(
-    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_1",
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20",
     column="job",
 )
 
 log = []
-params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer, "seed": None}
+params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer, "seed": 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
@@ -57,6 +57,8 @@ filtered_ds = resume_ds.sem_filter(
     depends_on=["resume"],
 )
 filtered_df = filtered_ds.run(config=pz_config).to_df()
+print(len(filtered_df))
+print(f"  PZ FILTER: {len(filtered_df)}/{len(df_resume)} passed ({time.time() - t0:.1f}s)")
 
 resume_ds = pz.MemoryDataset(id="resume-join", vals=filtered_df.to_dict("records"))
 job_ds = pz.MemoryDataset(id="job-join", vals=df_job.to_dict("records"))
@@ -74,6 +76,7 @@ result_df = mapped_ds.run(config=pz_config).to_df()
 pz_time = time.time() - t0
 print(len(result_df))
 print(f"  PZ:    {len(result_df)}/{len(df_resume)} passed ({pz_time:.1f}s)")
+print(result_df)
 
 rows = []
 for i in range(len(log)):
@@ -81,5 +84,6 @@ for i in range(len(log)):
         "pz_input": log[i]["input"], "pz_output": log[i]["output"],
     })
 
-write_csv(f"logs/{project}_job_matching_case_1_filter_join_map.csv", rows)
-print(f"  Saved logs/{project}_job_matching_case_1_filter_join_map.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")

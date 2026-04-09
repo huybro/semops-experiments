@@ -32,15 +32,15 @@ pz_config = QueryProcessorConfig(
     allow_mixtures=False,
     allow_critic=False,
     allow_split_merge=False,
-    seed=None,
+    seed=42,
     verbose=False,
 )
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_500")
-df_2 = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_500")
+df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_1")
+df_2 = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_1")
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer}
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
@@ -62,5 +62,6 @@ for i in range(len(log)):
     rows.append({ 
         "pz_input": log[i]["input"], "pz_output": log[i]["output"],
     })
-write_csv(f"logs/{project}_arxiv_topk_map.csv", rows)
-print(f"  Saved logs/{project}_arxiv_topk_map.csv")
+output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
+write_csv(output_csv, rows)
+print(f"  Saved {output_csv}")
