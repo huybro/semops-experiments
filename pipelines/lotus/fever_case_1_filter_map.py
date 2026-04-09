@@ -32,7 +32,7 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence_500.csv"))
+df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_evidence_3_5_tagged.csv"))
 # df = df.iloc[:1]
 print(f'len(df): {len(df)}')
 log = []

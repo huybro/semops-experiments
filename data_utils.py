@@ -100,6 +100,18 @@ def load_oracle_wiki_kb(claims_split: str = "labelled_dev", n_claims: int = 20) 
 # ============================================================
 import os
 import csv
+# def load_fever(DATA_PATH = "data/fever_claims_with_evidence.csv"):
+
+#     if not os.path.exists(DATA_PATH):
+#         raise FileNotFoundError(
+#             f"{DATA_PATH} not found. Run 'python prepare_data.py' first to generate it."
+#         )
+#     joined_df = pd.read_csv(DATA_PATH)
+#     # FEVER format: add [Claim]/[Evidence] prefixes for Lotus/PZ alignment
+#     joined_df["claim"] = "[Claim] " + joined_df["claim"]
+#     joined_df["content"] = "[Evidence] " + joined_df["content"]
+#     print(f"Loaded {len(joined_df)} (claim, evidence) pairs from {DATA_PATH}")
+#     return joined_df
 def load_fever(DATA_PATH = "data/fever_claims_with_evidence.csv"):
 
     if not os.path.exists(DATA_PATH):
@@ -108,10 +120,9 @@ def load_fever(DATA_PATH = "data/fever_claims_with_evidence.csv"):
         )
     joined_df = pd.read_csv(DATA_PATH)
     # FEVER format: add [Claim]/[Evidence] prefixes for Lotus/PZ alignment
-    joined_df["claim"] = "[Claim] " + joined_df["claim"]
-    joined_df["content"] = "[Evidence] " + joined_df["content"]
     print(f"Loaded {len(joined_df)} (claim, evidence) pairs from {DATA_PATH}")
     return joined_df
+
 
 
 def load_enron(dir_path: str, test=False) -> pd.DataFrame:

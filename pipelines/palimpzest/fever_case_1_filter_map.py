@@ -34,10 +34,11 @@ pz_config = QueryProcessorConfig(
     allow_split_merge=False,
     seed=42,
     verbose=False,
+    progress=False,
 )
 
 # Load Fever data
-df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence.csv"))
+df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_evidence_3_5_tagged.csv"))
 # df = df.iloc[:1]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
@@ -47,13 +48,13 @@ t0 = time.time()
 ds = pz.MemoryDataset(id="cmp-f1", vals=df.to_dict("records"))
 ds = ds.sem_filter(
     scenarios.FEVER_FILTER,
-    depends_on=["claim", "content"],
+    depends_on=["data"],
 )
 
 ds = ds.sem_map(
     cols=[{"name": "map", "type": str, "desc": scenarios.FEVER_MAP}],
     desc=scenarios.FEVER_MAP,
-    depends_on=["claim", "content"],
+    depends_on=["data"],
 )
 pz_df = ds.run(config=pz_config).to_df()
 pz_time = time.time() - t0

@@ -11,7 +11,7 @@ import lotus
 from lotus.models import LM
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
-from data_utils import write_csv, load_fever
+from data_utils import write_csv, load
 from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
@@ -32,17 +32,23 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_with_evidence.csv"))
-print(f'len(df): {len(df)}')
+df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt', column='resume')
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
-input_len = len(df)
-df = df.sem_filter(scenarios.FEVER_FILTER)
+input_len = len(df_resume)
+df = df_resume.sem_topk(scenarios.RESUME_CASE_2_TOPK, K=20)
+print(len(df), df)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
-
+df = df.sem_filter(scenarios.RESUME_CASE_2_FILTER)
+print(len(df))
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
+df = df.sem_map(scenarios.RESUME_CASE_2_MAP)
+print(len(df))
+print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
+print(df)
 rows = []
 for i in range(len(log)):
     rows.append({

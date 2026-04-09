@@ -34,6 +34,7 @@ pz_config = QueryProcessorConfig(
     allow_split_merge=False,
     seed=42,
     verbose=False,
+    progress=False,
 )
 
 df_resume = load(
@@ -68,7 +69,7 @@ joined_ds = resume_ds.sem_join(
     depends_on=["resume", "job"],
 )
 mapped_ds = joined_ds.sem_map(
-    cols=[{"name": "map", "type": str, "desc": scenarios.RESUME_CASE_2_MAP}],
+    cols=[{"name": "map", "type": str, "desc": scenarios.RESUME_CASE_1_MAP}],
     depends_on=["resume", "job"],
 )
 result_df = mapped_ds.run(config=pz_config).to_df()

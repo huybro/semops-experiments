@@ -32,8 +32,8 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20', column='resume')
-df_job = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20', column='job')
+df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_1', column='resume')
+df_job = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_1', column='job')
 # df_resume = df_resume.iloc[:20]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
@@ -42,15 +42,11 @@ llm_intercepter.set_intercept(**params)
 t0 = time.time()
 input_len = len(df_resume)
 df = df_resume.sem_filter(scenarios.RESUME_CASE_1_FILTER)
-print(len(df), df)
-print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
+print(len(df))
 df = df.sem_join(df_job, scenarios.RESUME_CASE_1_JOIN)
+# # df.sem_map(scenarios.RESUME_CASE_2_MAP)
 print(len(df))
-print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
-df = df.sem_map(scenarios.RESUME_CASE_1_MAP)
-print(len(df))
-print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
-print(df)
+print(f"  LOTUS: {len(df_resume)}/{input_len} passed ({time.time() - t0:.1f}s)")
 rows = []
 for i in range(len(log)):
     rows.append({

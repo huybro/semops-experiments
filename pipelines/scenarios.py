@@ -1,8 +1,10 @@
 
 # FEVER
-FEVER_FILTER = "{claim}{content}Given a claim and evidence, decide if the evidence is enough to determine whether the claim is true or false."
-FEVER_MAP = "{claim}{content}Explain how the evidence supports or unsupports the claim."
+# FEVER_FILTER = "{claim}{content}Given a claim and evidence, decide if the evidence is enough to determine whether the claim is true or false."
+# FEVER_MAP = "{claim}{content}Explain how the evidence supports or unsupports the claim."
 
+FEVER_FILTER = "{data}Given a claim and several evidence, determine if any of the evidence can support the claim"
+FEVER_MAP = "{data}Which evidence can support the claim?"
 
 # ENRON 1
 FILTER_ENRON_FRAUD = (
@@ -60,5 +62,9 @@ ARXIV_CASE_3_MAP = ("{abstract}Summarize the abstract in 1–2 sentences, focusi
 #MOVIE PLOT
 RESUME_CASE_1_FILTER = ("{resume}Does this candidate programming experience?")
 RESUME_CASE_1_JOIN = ("{resume}{job}Is this candidate suitable for this position?")
-RESUME_CASE_2_MAP = ("{resume}{job}Explain why this candidate is suitable for the position briefly")
+RESUME_CASE_1_MAP = ("{resume}{job}Explain why this candidate is suitable for the position briefly")
 
+
+RESUME_CASE_2_TOPK = ("{resume}I am finding a candidate who knows C++ and Machine Learning or Statistical Analysis.")
+RESUME_CASE_2_FILTER = ("{resume}Does this candidate have more than 5 years of experience?")
+RESUME_CASE_2_MAP = ("{resume}Can you extract the technical skills of the candidate?")

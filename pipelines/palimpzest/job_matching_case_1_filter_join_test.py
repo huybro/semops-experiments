@@ -13,7 +13,7 @@ from pipelines import scenarios
 
 from transformers import AutoTokenizer
 from pipelines import llm_intercepter
-from data_utils import write_csv, load_enron
+from data_utils import write_csv, load
 from pipelines.cli_utils import parse_vllm_args
 from palimpzest.query.processor.config import QueryProcessorConfig
 
@@ -27,8 +27,8 @@ pz_config = QueryProcessorConfig(
     api_base=VLLM_API_BASE,
     available_models=[PZ_MODEL],
     allow_model_selection=False,
-    allow_bonded_query=True,  # Use direct LLM (LLMConvertBonded), not RAG
-    allow_rag_reduction=False,  # Disable RAG (needs OpenAI embeddings)
+    allow_bonded_query=True,
+    allow_rag_reduction=False,
     allow_mixtures=False,
     allow_critic=False,
     allow_split_merge=False,
@@ -37,35 +37,47 @@ pz_config = QueryProcessorConfig(
     progress=False,
 )
 
-# Load Fever data
-df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"))
-df = df.iloc[:5]
+df_resume = load(
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_1",
+    column="resume",
+)
+df_job = load(
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_1",
+    column="job",
+)
+
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
+params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer, "seed": 42}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
-ds = pz.MemoryDataset(id="cmp-f1", vals=df.to_dict("records"))
-ds = ds.sem_filter(
-    scenarios.FILTER_ENRON_FRAUD,
-    depends_on=["contents"],
-)
-ds = ds.sem_filter(
-    scenarios.FILTER_ENRON_NOT_NEWS,
-    depends_on=["contents"],
-)
 
-pz_df = ds.run(config=pz_config).to_df()
+resume_ds = pz.MemoryDataset(id="resume-filter", vals=df_resume.to_dict("records"))
+filtered_ds = resume_ds.sem_filter(
+    scenarios.RESUME_CASE_1_FILTER.replace("{resume}", ""),
+    depends_on=["resume"],
+)
+filtered_df = filtered_ds.run(config=pz_config).to_df()
+
+resume_ds = pz.MemoryDataset(id="resume-join", vals=filtered_df.to_dict("records"))
+job_ds = pz.MemoryDataset(id="job-join", vals=df_job.to_dict("records"))
+joined_ds = resume_ds.sem_join(
+    job_ds,
+    condition=scenarios.RESUME_CASE_1_JOIN,
+    depends_on=["resume", "job"],
+)
+result_df = joined_ds.run(config=pz_config).to_df()
+
 pz_time = time.time() - t0
-pz_cap = list(log)
-print(f"  PZ:    {len(pz_df)}/{len(df)} passed ({pz_time:.1f}s)")
+print(len(result_df))
+print(f"  PZ:    {len(result_df)}/{len(df_resume)} passed ({pz_time:.1f}s)")
 
-# ── Log ──
 rows = []
-for i in range(len(log)): 
-    rows.append({ 
+for i in range(len(log)):
+    rows.append({
         "pz_input": log[i]["input"], "pz_output": log[i]["output"],
     })
+
 output_csv = f"logs/{project}_{os.path.splitext(os.path.basename(__file__))[0]}.csv"
 write_csv(output_csv, rows)
 print(f"  Saved {output_csv}")
