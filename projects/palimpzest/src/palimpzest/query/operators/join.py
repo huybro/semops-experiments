@@ -467,7 +467,7 @@ class NestedLoopsJoin(LLMJoin):
                 join_output_record, join_output_record_op_stats = future.result()
                 output_records.append(join_output_record)
                 output_record_op_stats.append(join_output_record_op_stats)
-                print(f"{self.join_idx} JOINED")
+                # print(f"{self.join_idx} JOINED")
 
         # compute the number of inputs processed
         num_inputs_processed = len(join_candidates)
@@ -728,7 +728,7 @@ class EmbeddingJoin(LLMJoin):
                         output_record_op_stats.append(join_output_record_op_stats)
                         similarities.append(embedding_sim)
                         joined.append(join_output_record._passed_operator)
-                        print(f"{self.join_idx} JOINED")
+                        # print(f"{self.join_idx} JOINED")
 
                     # sort join results by embedding similarity
                     sorted_sim_join_tuples = sorted(zip(similarities, joined), key=lambda x: x[0])
@@ -782,7 +782,7 @@ class EmbeddingJoin(LLMJoin):
                     output_record_op_stats.append(join_output_record_op_stats)
                     similarities.append(embedding_sim)
                     joined.append(join_output_record._passed_operator)
-                    print(f"{self.join_idx} JOINED")
+                    # print(f"{self.join_idx} JOINED")
 
                 ### update thresholds if there are llm calls which incrementally squeeze the boundaries ###
                 # sort join results by embedding similarity

@@ -38,6 +38,8 @@ class Model(str, Enum):
     GPT_4o_AUDIO_PREVIEW = "openai/gpt-4o-audio-preview"
     GPT_4o_MINI_AUDIO_PREVIEW = "openai/gpt-4o-mini-audio-preview"
     VLLM_QWEN_1_5_0_5B_CHAT = "hosted_vllm/qwen/Qwen1.5-0.5B-Chat"
+    VLLM_QWEN_14B_CHAT = "hosted_vllm/Qwen/Qwen3-14B"
+    VLLM_QWEN_32B_CHAT = "hosted_vllm/Qwen/Qwen3-32B"
     VLLM_LLAMA3_2_3B = "hosted_vllm/meta-llama/Llama-3.2-3B-Instruct"
     VLLM_LLAMA3_1_8B = "hosted_vllm/meta-llama/Llama-3.1-8B-Instruct"
     # o1 = "o1-2024-12-17"
@@ -601,6 +603,24 @@ VLLM_QWEN_1_5_0_5B_CHAT_MODEL_CARD = {
     ##### Agg. Benchmark #####
     "overall": 30.0, # TODO: fill-in with a better estimate
 }
+VLLM_QWEN_14B_CHAT_MODEL_CARD = {
+    ##### Cost in USD #####
+    "usd_per_input_token": 0.0 / 1e6,
+    "usd_per_output_token": 0.0 / 1e6,
+    ##### Time #####
+    "seconds_per_output_token": 0.0200, # TODO: fill-in with a better estimate
+    ##### Agg. Benchmark #####
+    "overall": 50.0, # TODO: fill-in with a better estimate
+}
+VLLM_QWEN_32B_CHAT_MODEL_CARD = {
+    ##### Cost in USD #####
+    "usd_per_input_token": 0.0 / 1e6,
+    "usd_per_output_token": 0.0 / 1e6,
+    ##### Time #####
+    "seconds_per_output_token": 0.0400, # TODO: fill-in with a better estimate
+    ##### Agg. Benchmark #####
+    "overall": 60.0, # TODO: fill-in with a better estimate
+}
 
 
 LLAMA3_2_3B_MODEL_CARD = {
@@ -646,6 +666,8 @@ MODEL_CARDS = {
     Model.GOOGLE_GEMINI_2_5_PRO.value: GEMINI_2_5_PRO_MODEL_CARD,
     Model.LLAMA_4_MAVERICK.value: LLAMA_4_MAVERICK_MODEL_CARD,
     Model.VLLM_QWEN_1_5_0_5B_CHAT.value: VLLM_QWEN_1_5_0_5B_CHAT_MODEL_CARD,
+    Model.VLLM_QWEN_14B_CHAT.value: VLLM_QWEN_14B_CHAT_MODEL_CARD,
+    Model.VLLM_QWEN_32B_CHAT.value: VLLM_QWEN_32B_CHAT_MODEL_CARD,
     Model.VLLM_LLAMA3_2_3B.value: LLAMA3_2_3B_MODEL_CARD,
     Model.VLLM_LLAMA3_1_8B.value: LLAMA3_2_3B_MODEL_CARD,
 }

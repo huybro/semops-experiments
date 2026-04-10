@@ -19,11 +19,16 @@ lotus.logger.setLevel("DEBUG")
 # Environment flags to enable/disable tests
 ENABLE_OPENAI_TESTS = os.getenv("ENABLE_OPENAI_TESTS", "false").lower() == "true"
 ENABLE_OLLAMA_TESTS = os.getenv("ENABLE_OLLAMA_TESTS", "false").lower() == "true"
+ENABLE_VLLM_TESTS = os.getenv("ENABLE_VLLM_TESTS", "false").lower() == "true"
 
 MODEL_NAME_TO_ENABLED = {
     "gpt-4o-mini": ENABLE_OPENAI_TESTS,
     "gpt-4o": ENABLE_OPENAI_TESTS,
     "ollama/llama3.1": ENABLE_OLLAMA_TESTS,
+    "hosted_vllm/meta-llama/Llama-3.2-3B-Instruct": ENABLE_VLLM_TESTS,
+    "hosted_vllm/meta-llama/Llama-3.1-8B-Instruct": ENABLE_VLLM_TESTS,
+    "hosted_vllm/Qwen/Qwen3-14B": ENABLE_VLLM_TESTS,
+    "hosted_vllm/Qwen/Qwen3-32B": ENABLE_VLLM_TESTS,
 }
 ENABLED_MODEL_NAMES = set([model_name for model_name, is_enabled in MODEL_NAME_TO_ENABLED.items() if is_enabled])
 
