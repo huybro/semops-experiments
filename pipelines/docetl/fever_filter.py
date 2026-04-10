@@ -62,7 +62,7 @@ def main() -> None:
     }
 
     t0 = time.time()
-    runner = DSLRunner(config, max_threads=1)
+    runner = DSLRunner(config, max_threads=16)
     runner.load()
     output, _, _ = runner.last_op_container.next()
     dt = time.time() - t0
