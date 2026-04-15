@@ -32,7 +32,7 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20', column='resume')
+df_resume = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_50', column='resume')
 df_job = load('/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20', column='job')
 # df_resume = df_resume.iloc[:20]
 log = []

@@ -32,7 +32,7 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_5000")
+df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_2000")
 # df = df.iloc[:100]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}

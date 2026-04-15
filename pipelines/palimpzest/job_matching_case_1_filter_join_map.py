@@ -37,7 +37,7 @@ pz_config = QueryProcessorConfig(
 )
 
 df_resume = load(
-    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20",
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_50",
     column="resume",
 )
 df_job = load(
