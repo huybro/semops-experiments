@@ -1,0 +1,1 @@
+{"models": [{"modalities": ["text"], "priority": 100, "kwargs": {"filter": {"model": "hosted_vllm/meta-llama/Llama-3.2-3B-Instruct", "api_base": "http://localhost:8003/v1", "max_tokens": 512, "temperature": 0}, "join": {"model": "hosted_vllm/meta-llama/Llama-3.2-3B-Instruct", "api_base": "http://localhost:8003/v1", "max_tokens": 512, "temperature": 0}}}]}
