@@ -18,7 +18,7 @@ from pipelines.cli_utils import parse_vllm_args
 from palimpzest.query.processor.config import QueryProcessorConfig
 
 project = 'palimpzest'
-MAX_TOKENS = 512
+MAX_TOKENS = 4096
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -57,10 +57,12 @@ _ds = _ds.sem_filter(
     scenarios.ARXIV_CASE_3_FILTER_3.replace('{abstract}', ""),
     depends_on=["abstract"],
 )
-_ds = _ds.sem_filter(
-    scenarios.ARXIV_CASE_3_MAP.replace('{abstract}', ""),
+
+_ds = _ds.sem_map(
+    cols=[{"name": "map", "type": str, "desc": scenarios.ARXIV_CASE_3_MAP.replace('{abstract}', "")}],
     depends_on=["abstract"],
 )
+    
 pz_df = _ds.run(config=pz_config).to_df()
 pz_time = time.time() - t0
 pz_cap = list(log)

@@ -15,7 +15,7 @@ from data_utils import write_csv, load_fever
 from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
-MAX_TOKENS = 512
+MAX_TOKENS = 4096
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -32,6 +32,7 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
+# df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_evidence_3_5_tagged_test.csv"))
 df = load_fever(os.path.join(PROJECT_ROOT, "data", "fever_claims_evidence_3_5_tagged.csv"))
 # df = df.iloc[:1]
 print(f'len(df): {len(df)}')

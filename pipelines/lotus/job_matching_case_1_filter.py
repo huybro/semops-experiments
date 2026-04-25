@@ -15,7 +15,7 @@ from data_utils import write_csv, load
 from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
-MAX_TOKENS = 512
+MAX_TOKENS = 4096
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 

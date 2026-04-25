@@ -16,7 +16,7 @@ from pipelines.cli_utils import parse_vllm_args
 
 
 project = 'lotus'
-MAX_TOKENS = 512
+MAX_TOKENS = 4096
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -33,7 +33,7 @@ lotus.settings.configure(lm=_lotus_lm)
 
 
 # -- LOTUS --
-joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"), test=False)
+joined_df = load_enron(os.path.join(PROJECT_ROOT, "enron-eval-number"))
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
 llm_intercepter.set_intercept(**params)

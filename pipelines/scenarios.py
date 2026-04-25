@@ -3,8 +3,10 @@
 # FEVER_FILTER = "{claim}{content}Given a claim and evidence, decide if the evidence is enough to determine whether the claim is true or false."
 # FEVER_MAP = "{claim}{content}Explain how the evidence supports or unsupports the claim."
 
-FEVER_FILTER = "{data}Given a claim and several evidence, determine if any of the evidence can support the claim"
-FEVER_MAP = "{data}Which evidence can support the claim?"
+# FEVER_FILTER = "{data}Given a claim and several evidence, determine if any of the evidence can support the claim"
+# FEVER_MAP = "{data}Which evidence can support the claim?"
+FEVER_FILTER = "{data}Given a claim and evidence, decide if the evidence is enough to determine whether the claim is true or false."
+FEVER_MAP = "{data}Explain how the evidence supports or unsupports the claim."
 
 # ENRON 1
 FILTER_ENRON_FRAUD = (
@@ -60,8 +62,11 @@ ARXIV_CASE_3_FILTER_3 = ("{abstract}Does this abstract mention using an image da
 ARXIV_CASE_3_MAP = ("{abstract}Summarize the abstract in 1–2 sentences, focusing on the main method and key result.")
 
 #MOVIE PLOT
-RESUME_CASE_1_FILTER = ("{resume}Does this candidate programming experience?")
-RESUME_CASE_1_JOIN = ("{resume}{job}Is this candidate suitable for this position?")
+RESUME_CASE_1_FILTER = ("{resume}Does this resume show software development or programming experience?")
+RESUME_CASE_1_MAP_1 = ("{resume}Summarize the resume")
+RESUME_CASE_1_JOIN = ("{resume}{job}Is this candidate a plausible fit for this software/developer job based on skills, tools, and experience?")
+# RESUME_CASE_1_JOIN = ("{resume}{job}Is this candidate suitable for this position?")
+
 RESUME_CASE_1_MAP = ("{resume}{job}Explain why this candidate is suitable for the position briefly")
 
 

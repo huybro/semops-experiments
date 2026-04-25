@@ -18,7 +18,7 @@ from pipelines.cli_utils import parse_vllm_args
 from palimpzest.query.processor.config import QueryProcessorConfig
 
 project = 'palimpzest'
-MAX_TOKENS = 512
+MAX_TOKENS = 4096
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -41,7 +41,7 @@ df_resume = load(
     column="resume",
 )
 df_job = load(
-    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20",
+    "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50",
     column="job",
 )
 
@@ -76,7 +76,6 @@ result_df = mapped_ds.run(config=pz_config).to_df()
 pz_time = time.time() - t0
 print(len(result_df))
 print(f"  PZ:    {len(result_df)}/{len(df_resume)} passed ({pz_time:.1f}s)")
-print(result_df)
 
 rows = []
 for i in range(len(log)):
