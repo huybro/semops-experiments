@@ -1,0 +1,1 @@
+{'data_path': '/home/hojaeson_umass_edu/project/vllm-test/ref/lotus-experiment/enron-eval-number', 'ops': [{'op': 'sem_filter', 'args': {'prompt': '{contents}The email refers to a fraudulent scheme (i.e., "Raptor", "Deathstar", "Chewco", and/or "Fat Boy")'}}]}

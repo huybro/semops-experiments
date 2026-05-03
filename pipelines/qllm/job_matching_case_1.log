@@ -1,0 +1,7 @@
+{'data_path': '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_20', 'ops': [{'op': 'sem_filter', 'args': {'prompt': 'Does this candidate programming experience?'}}, {'op': 'join', 'args': {'instruction': 'Is this candidate suitable for this position?', 'right_table': '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_20'}}, {'op': 'sem_map', 'args': {'prompt': 'Explain why this candidate is suitable for the position briefly'}}]}
+Request latency: 156.503 seconds
+
+Server Response:
+{'predicate_result': 'yes', 'request_id': 'test'}
+
+Total request time: 156.503 seconds

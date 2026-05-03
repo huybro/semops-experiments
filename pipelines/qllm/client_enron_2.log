@@ -1,0 +1,21 @@
+{'data_path': '/home/hojaeson_umass_edu/project/vllm-test/ref/lotus-experiment/enron-eval-number', 'ops': [{'op': 'sem_filter', 'args': {'prompt': '{contents}The email is normal scheme (i.e., Not "Raptor", "Deathstar", "Chewco", and/or "Fat Boy")'}}]}
+Request latency: 600.436 seconds
+
+Server Response:
+{'predicate_result': 'yes', 'request_id': 'test'}
+
+Total request time: 600.436 seconds
+{'data_path': '/home/hojaeson_umass_edu/project/vllm-test/ref/lotus-experiment/enron-eval-number', 'ops': [{'op': 'sem_filter', 'args': {'prompt': '{contents}The email is normal scheme (i.e., Not "Raptor", "Deathstar", "Chewco", and/or "Fat Boy")'}}, {'op': 'sem_filter', 'args': {'prompt': '{contents}The email includes people associated with Enron.'}}]}
+Request latency: 684.259 seconds
+
+Server Response:
+{'predicate_result': 'yes', 'request_id': 'test'}
+
+Total request time: 684.259 seconds
+{'data_path': '/home/hojaeson_umass_edu/project/vllm-test/ref/lotus-experiment/enron-eval-number', 'ops': [{'op': 'sem_filter', 'args': {'prompt': '{contents}The email is normal scheme (i.e., Not "Raptor", "Deathstar", "Chewco", and/or "Fat Boy")'}}, {'op': 'sem_filter', 'args': {'prompt': '{contents}The email includes people associated with Enron.'}}, {'op': 'sem_map', 'args': {'prompt': '{contents}Summarize the email briefly.'}}]}
+Request latency: 882.275 seconds
+
+Server Response:
+{'predicate_result': 'yes', 'request_id': 'test'}
+
+Total request time: 882.275 seconds
