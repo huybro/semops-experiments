@@ -118,7 +118,7 @@ class SemanticQueryBuilder:
 if __name__ == "__main__":
     model_name, endpoint = parse_query_args()
 
-    data_path = "/home/hojaeson_umass_edu/project/vllm-test/ref/lotus-experiment/enron-eval-number"
+    data_path = "/scratch/hojaeson_umass/enron-eval-number"
 
     query_1 = (
         SemanticQueryBuilder(data_path, model_name=model_name)

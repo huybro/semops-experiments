@@ -22,7 +22,7 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     os.environ.setdefault("DOCETL_HOME_DIR", os.path.join(PROJECT_ROOT, ".docetl_home"))
 
-    df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"))
+    df = load_enron("/scratch/hojaeson_umass/enron-eval-number")
     df = df.head(50)
     records = df.to_dict("records")
 

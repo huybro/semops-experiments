@@ -119,21 +119,19 @@ if __name__ == "__main__":
     model_name, endpoint = parse_query_args()
 
 
-    data_path = '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_50_ultra_selective'
+    data_path = '/scratch/hojaeson_umass/kagglehub/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_50_ultra_selective'
     query_1 = SemanticQueryBuilder(data_path, model_name=model_name).sem_filter(scenarios.RESUME_CASE_1_FILTER)
 
     query_2 = (
         SemanticQueryBuilder(data_path, model_name=model_name)
         .sem_filter(scenarios.RESUME_CASE_1_FILTER)
-        .sem_join(scenarios.RESUME_CASE_1_JOIN, '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective')
+        .sem_join(scenarios.RESUME_CASE_1_JOIN, '/scratch/hojaeson_umass/kagglehub/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective')
     )
 
     query_3 = (
         SemanticQueryBuilder(data_path, model_name=model_name)
         .sem_filter(scenarios.RESUME_CASE_1_FILTER)
-        .sem_join(scenarios.RESUME_CASE_1_JOIN, '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective')
-        .sem_map(scenarios.RESUME_CASE_1_MAP)
-        .sem_join(scenarios.RESUME_CASE_1_JOIN, '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective')
+        .sem_join(scenarios.RESUME_CASE_1_JOIN, '/scratch/hojaeson_umass/kagglehub/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective')
         .sem_map(scenarios.RESUME_CASE_1_MAP)
     )
 

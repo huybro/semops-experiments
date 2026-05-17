@@ -1,0 +1,8 @@
+tokenizer.json: 0.00B [00:00, ?B/s]tokenizer.json: 4.13MB [00:00, 41.0MB/s]tokenizer.json: 8.31MB [00:00, 41.4MB/s]tokenizer.json: 9.08MB [00:00, 40.9MB/s]
+Running helper LM:   0%|                                        0/140 LM calls [00:00<?, ?it/s]Running helper LM: 100%|############################# 140/140 LM calls [02:09<00:00,  1.08it/s]Running helper LM: 100%|############################# 140/140 LM calls [02:09<00:00,  1.08it/s]
+/home/hojaeson_umass/projects/lotus/lotus/models/lm.py:474: UserWarning: No pricing information available for model hosted_vllm/meta-llama/Llama-3.3-70B-Instruct. 
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+Running oracle for threshold learning:   0%|                     0/14 LM calls [00:00<?, ?it/s]Running oracle for threshold learning: 100%|########### 14/14 LM calls [00:28<00:00,  2.04s/it]Running oracle for threshold learning: 100%|########### 14/14 LM calls [00:28<00:00,  2.04s/it]
+/home/hojaeson_umass/projects/lotus/lotus/models/lm.py:474: UserWarning: No pricing information available for model hosted_vllm/meta-llama/Llama-3.3-70B-Instruct. 
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+Running predicate evals with oracle LM:   0%|                    0/20 LM calls [00:00<?, ?it/s]Running predicate evals with oracle LM: 100%|########## 20/20 LM calls [00:29<00:00,  1.46s/it]Running predicate evals with oracle LM: 100%|########## 20/20 LM calls [00:29<00:00,  1.46s/it]

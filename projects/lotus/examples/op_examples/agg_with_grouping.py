@@ -1,7 +1,3 @@
-import sys
-
-# Add lotus source AFTER stdlib init
-sys.path.append("/home/hojaeson_umass_edu/project/vllm-test/ref/lotus")
 import time
 
 import pandas as pd
@@ -9,16 +5,9 @@ import pandas as pd
 import lotus
 from lotus.models import LM
 
-
-lm = LM(
-    model='hosted_vllm/meta-llama/Llama-3.1-8B-Instruct',
-    api_base='http://localhost:8003/v1',
-    max_ctx_len=8000,
-    max_tokens=1000
-)
+lm = LM(model="gpt-4o-mini")
 
 lotus.settings.configure(lm=lm)
-
 
 data = {
     "Course Name": [

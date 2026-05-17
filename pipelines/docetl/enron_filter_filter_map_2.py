@@ -23,7 +23,7 @@ def main() -> None:
     os.environ.setdefault("DOCETL_HOME_DIR", os.path.join(PROJECT_ROOT, ".docetl_home"))
 
     df = load_enron(
-        os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"), test=True
+        "/scratch/hojaeson_umass/enron-eval-number", test=True
     )
     records = df.to_dict("records")
     records_len = len(records)

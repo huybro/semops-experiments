@@ -10,8 +10,8 @@ from typing import Iterator
 VLLM_URL = "http://localhost:8000/v1/chat/completions"
 MODEL = "meta-llama/Llama-3.2-3B-Instruct"
 
-RESUME_PATH = "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/Resume.csv"
-JOB_PATH = "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/arshkon/linkedin-job-postings/versions/13/postings.csv"
+RESUME_PATH = "/scratch/hojaeson_umass/kagglehub/snehaanbhawal/resume-dataset/versions/1/Resume/Resume.csv"
+JOB_PATH = "/scratch/hojaeson_umass/kagglehub/arshkon/linkedin-job-postings/versions/13/postings.csv"
 
 MAX_RESUME_CHARS = 5500
 MAX_JOB_CHARS = 5200

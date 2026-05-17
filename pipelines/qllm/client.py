@@ -100,16 +100,16 @@ if __name__ == "__main__":
     model_name, endpoint = parse_query_args()
 
     query_builder = SemanticQueryBuilder(
-        "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_50",
+        "/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_50",
         model_name=model_name,
     )
 
     query = (
         query_builder
             .sem_filter("Is this biology relevant paper?")
-            # .sem_join("Are these relevant? return True", '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/category')
+            # .sem_join("Are these relevant? return True", '/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/category')
             # .sem_map("Summarize the research abstract and explain how it is related to the category")
-            # .sem_join("Is this a part of research paper?", '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/category')
+            # .sem_join("Is this a part of research paper?", '/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/category')
             # .sem_map("Summarize the research abstract and explain how it is related to the category")
             # .sem_filter("Is this AI relevant paper? return True")
             

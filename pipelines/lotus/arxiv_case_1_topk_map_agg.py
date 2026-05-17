@@ -16,6 +16,8 @@ from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
 MAX_TOKENS = 4096
+FREQUENCY_PENALTY = 0.5
+REPETITION_PENALTY = 1.3
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -27,15 +29,17 @@ _lotus_lm = LM(
     temperature=0,
     top_p=1,
     seed=42,
+    frequency_penalty=FREQUENCY_PENALTY,
+    repetition_penalty=REPETITION_PENALTY,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_500")
+df = load_arxiv("/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_500")
 df = df.iloc[:10]
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42, 'frequency_penalty': FREQUENCY_PENALTY, 'repetition_penalty': REPETITION_PENALTY}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()

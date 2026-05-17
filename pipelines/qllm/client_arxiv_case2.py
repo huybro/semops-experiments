@@ -119,19 +119,19 @@ if __name__ == "__main__":
     model_name, endpoint = parse_query_args()
 
 
-    data_path = "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_200"
+    data_path = "/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_200"
     query_1 = SemanticQueryBuilder(data_path, model_name=model_name).sem_filter(scenarios.CASE_2_FILTER_ARXIV)
 
     query_2 = (
         SemanticQueryBuilder(data_path, model_name=model_name)
         .sem_filter(scenarios.CASE_2_FILTER_ARXIV)
-        .sem_join(scenarios.CASE_2_JOIN_ARXIV, "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_robotic")
+        .sem_join(scenarios.CASE_2_JOIN_ARXIV, "/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_robotic")
     )
 
     query_3 = (
         SemanticQueryBuilder(data_path, model_name=model_name)
         .sem_filter(scenarios.CASE_2_FILTER_ARXIV)
-        .sem_join(scenarios.CASE_2_JOIN_ARXIV, "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_robotic")
+        .sem_join(scenarios.CASE_2_JOIN_ARXIV, "/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_robotic")
         .sem_map(scenarios.CASE_2_MAP_ARXIV)
     )
 

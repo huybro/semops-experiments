@@ -16,7 +16,10 @@ from pipelines.cli_utils import parse_vllm_args
 
 
 project = 'lotus'
+FILTER_MAX_TOKENS = 8
 MAX_TOKENS = 4096
+FREQUENCY_PENALTY = 0.5
+REPETITION_PENALTY = 1.3
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -24,20 +27,29 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 _lotus_lm = LM(
     model=f"hosted_vllm/{MODEL_NAME}",
     api_base=VLLM_API_BASE,
-    max_tokens=MAX_TOKENS,
+    max_tokens=FILTER_MAX_TOKENS,
     temperature=0,
     top_p=1,
     seed=42,
+    frequency_penalty=FREQUENCY_PENALTY,
+    repetition_penalty=REPETITION_PENALTY,
 )
+log = []
 lotus.settings.configure(lm=_lotus_lm)
+params = {
+    'log': log,
+    'max_tokens': FILTER_MAX_TOKENS,
+    'tokenizer': tokenizer,
+    'seed': 42,
+    'frequency_penalty': FREQUENCY_PENALTY,
+    'repetition_penalty': REPETITION_PENALTY,
+}
+llm_intercepter.set_intercept(**params)
 
 
 # -- LOTUS --
-joined_df = load_enron(os.path.join(PROJECT_ROOT, "enron-eval-number"))
+joined_df = load_enron("/scratch/hojaeson_umass/enron-eval-number")
 # joined_df = joined_df.iloc[:1]
-log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
-llm_intercepter.set_intercept(**params)
 
 
 t0 = time.time()
@@ -47,6 +59,28 @@ print(f"{lotus_time:.1f}s")
 df_filter2 = df_filter1.sem_filter(scenarios.FILTER_ENRON_NOT_NEWS)
 lotus_time = time.time() - t0
 print(f"{lotus_time:.1f}s")
+
+_lotus_lm = LM(
+    model=f"hosted_vllm/{MODEL_NAME}",
+    api_base=VLLM_API_BASE,
+    max_tokens=MAX_TOKENS,
+    temperature=0,
+    top_p=1,
+    seed=42,
+    frequency_penalty=FREQUENCY_PENALTY,
+    repetition_penalty=REPETITION_PENALTY,
+)
+lotus.settings.configure(lm=_lotus_lm)
+params = {
+    'log': log,
+    'max_tokens': MAX_TOKENS,
+    'tokenizer': tokenizer,
+    'seed': 42,
+    'frequency_penalty': FREQUENCY_PENALTY,
+    'repetition_penalty': REPETITION_PENALTY,
+}
+llm_intercepter.set_intercept(**params)
+
 df_map = df_filter2.sem_map(scenarios.MAP_ENRON_EXPLANATION, suffix="fraud_explanation")
 lotus_time = time.time() - t0
 print(f"{lotus_time:.1f}s")

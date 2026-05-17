@@ -198,7 +198,7 @@ if __name__ == "__main__":
     safe_model = _safe_slug(model_name)
     csv_path = script_dir / "logs" / f"client_arxiv_case3_{safe_model}_{run_id}.csv"
 
-    data_path = "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_2000"
+    data_path = "/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_2000"
     query_1 = SemanticQueryBuilder(data_path, model_name=model_name).sem_filter(scenarios.CASE_3_FILTER_1)
 
     query_2 = (

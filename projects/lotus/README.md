@@ -72,37 +72,46 @@ If you're using uv, the faiss-cpu dependency will be handled automatically.
 For more details, see [Installing FAISS via Conda](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md#installing-faiss-via-conda).
 
 # Quickstart
-If you're already familiar with Pandas, getting started will be a breeze! Below we provide a simple example program using the semantic join operator. The join, like many semantic operators, are specified by **langex** (natural language expressions), which the programmer uses to specify the operation. Each langex is parameterized by one or more table columns, denoted in brackets. The join's langex serves as a predicate and is parameterized by a right and left join key.
+If you're already familiar with Pandas, getting started will be a breeze! Below we provide a simple example using `sem_filter`. Like all semantic operators, it is specified by a **langex** (natural language expression) parameterized by one or more column names in brackets — here `{title}`. The langex for a `sem_filter` is a NL predicate, which is a natural language expression that can be evaluated to a True/False value.
+
 ```python
 import pandas as pd
 import lotus
 from lotus.models import LM
 
-# configure the LM, and remember to export your API key
+# Configure the LM — export your API key before running (e.g. OPENAI_API_KEY)
 lm = LM(model="gpt-4.1-nano")
 lotus.settings.configure(lm=lm)
 
-# create dataframes with course names and skills
-courses_data = {
-    "Course Name": [
-        "History of the Atlantic World",
-        "Riemannian Geometry",
-        "Operating Systems",
-        "Food Science",
-        "Compilers",
-        "Intro to computer science",
+# A sample of GitHub-style issue titles from an open source project
+issues = pd.DataFrame({
+    "title": [
+        "Fix typo in README",
+        "Add dark mode support to dashboard",
+        "Refactor entire auth system to use OAuth2",
+        "Update copyright year in LICENSE",
+        "Implement distributed transaction support across microservices",
+        "Change button color on settings page",
+        "Migrate database from Postgres 13 to 16 with zero downtime",
+        "Add missing comma in error message",
+        "Build custom query planner to replace third-party dependency",
+        "Bump lodash to fix known CVE",
+        "Support multi-region active-active replication",
+        "Remove unused import in utils.py",
     ]
-}
-skills_data = {"Skill": ["Math", "Computer Science"]}
-courses_df = pd.DataFrame(courses_data)
-skills_df = pd.DataFrame(skills_data)
+})
 
-# lotus sem join 
-res = courses_df.sem_join(skills_df, "Taking {Course Name} will help me learn {Skill}")
-print(res)
+# Use sem_filter to find issues approachable for a first-time contributor
+good_first_issues = issues.sem_filter(
+    "The {title} describes a small, self-contained task that a new open source contributor could tackle without deep knowledge of the codebase"
+)
 
-# Print total LM usage
-lm.print_total_usage()
+print("Good first issues for new contributors:\n")
+print(good_first_issues.to_string(index=False))
+
+# Uncomment to print the total LM usage
+# lm.print_total_usage()
+
 ```
 ### Tutorials
 
@@ -150,7 +159,7 @@ There are 3 main model classes in LOTUS:
 - `Reranker`: The reranker model class.
     - Any `CrossEncoder` from `SentenceTransformers` can be used with the `CrossEncoderReranker` class, by passing the model name to the `model` parameter (see [an example here](examples/op_examples/search.py)).
 
-# Feature Requests and Contributing
+# Contributing
 
 We welcome contributions from the community! Whether you're reporting bugs, suggesting features, or contributing code, we have comprehensive templates and guidelines to help you get started.
 
@@ -162,11 +171,6 @@ Before contributing, please:
 2. **Check existing issues** - Avoid duplicates by searching existing issues and pull requests
 3. **Join our community** - Connect with us on [Discord][#discord]
 
-
-## Development Setup
-
-For development setup and detailed contribution guidelines, see our [Contributing Guide](CONTRIBUTING.md).
-
 ## Community
 
 - **Discord**: [Join our community][#discord]
@@ -174,6 +178,7 @@ For development setup and detailed contribution guidelines, see our [Contributin
 - **Discussions**: [GitHub Discussions](https://github.com/lotus-data/lotus/discussions)
 
 We're excited to see what you build with LOTUS! 🚀
+If you would like to be listed as a user and have your project featured, please reach out to lianapat@stanford.edu.
 
 # References
 For recent updates related to LOTUS, follow [@lianapatel_](https://x.com/lianapatel_) on X.

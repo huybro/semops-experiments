@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PORT="${1:-8208}"
+PORT="${1:-8003}"
 BASE_URL="${BASE_URL:-http://localhost:${PORT}}"
 UNPIN_IDS="${UNPIN_IDS:-}"
 

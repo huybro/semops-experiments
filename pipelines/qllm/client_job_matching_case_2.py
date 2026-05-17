@@ -119,8 +119,8 @@ if __name__ == "__main__":
     model_name, endpoint = parse_query_args()
 
 
-    data_path = '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt'#_20_origin'
-    query_1 = SemanticQueryBuilder(data_path, model_name=model_name).sem_topk(scenarios.RESUME_CASE_2_TOPK, k=20)
+    data_path = '/scratch/hojaeson_umass/kagglehub/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt'#_20_origin'
+    query_1 = SemanticQueryBuilder(data_path, model_name=model_name).sem_topk(scenarios.RESUME_CASE_2_TOPK, k=50)
 
     query_2 = (
         SemanticQueryBuilder(data_path, model_name=model_name)

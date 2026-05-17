@@ -59,7 +59,7 @@ def _ensure_model_config(path: str) -> None:
 
 
 def main() -> None:
-    joined_df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"))
+    joined_df = load_enron("/scratch/hojaeson_umass/enron-eval-number")
 
     log = []
     params = {"log": log, "max_tokens": MAX_TOKENS, "tokenizer": tokenizer}

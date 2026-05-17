@@ -1,0 +1,6 @@
+[
+  {
+    "step0_cascade_args.helper_filter_instruction": "{col_A} is better than {col_B} given the criteria: For the given question {question}, which answer is better given the supporting quotes? ",
+    "step0_judge_instruction": "For the given question {question}, which answer is better given the supporting quotes? "
+  }
+]

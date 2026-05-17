@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     SERVER_URL = "http://localhost:8000/semantic_query"
 
-    RESUME_PATH = "/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/Resume.csv"
+    RESUME_PATH = "/scratch/hojaeson_umass/kagglehub/snehaanbhawal/resume-dataset/versions/1/Resume/Resume.csv"
     resumes = load_resumes(RESUME_PATH)
 
 

@@ -37,7 +37,7 @@ pz_config = QueryProcessorConfig(
 )
 
 # Load Fever data
-df = load_enron(os.path.join(PROJECT_ROOT, "projects/palimpzest/testdata/enron-eval"))
+df = load_enron("/scratch/hojaeson_umass/enron-eval-number")
 # df = df.iloc[:1]
 log = []
 params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}

@@ -101,6 +101,27 @@ class SemanticQueryBuilder:
         })
         return self
 
+    def cartesian_product(
+        self,
+        right_table,
+        *,
+        icp: bool = False,
+        icp_address: str = DEFAULT_ICP_ADDRESS,
+        icp_port: int = DEFAULT_ICP_PORT,
+        icp_top_k: int = DEFAULT_ICP_TOP_K,
+    ):
+        self.plan.append({
+            "op": "cp",
+            "args": {
+                "right_table": right_table,
+                "icp": icp,
+                "icp_address": icp_address,
+                "icp_port": icp_port,
+                "icp_top_k": icp_top_k,
+            }
+        })
+        return self
+
     def build(self) -> dict:
         payload = {
             "data_path": self.data_path,
@@ -136,7 +157,7 @@ if __name__ == "__main__":
     model_name, endpoint = parse_query_args()
 
 
-    data_path = '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_50_ultra_selective'
+    data_path = '/scratch/hojaeson_umass/kagglehub/snehaanbhawal/resume-dataset/versions/1/Resume/resume_txt_50_ultra_selective'
     query_1 = SemanticQueryBuilder(data_path, model_name=model_name).sem_filter(scenarios.RESUME_CASE_1_FILTER)
 
     query_2 = (
@@ -144,7 +165,7 @@ if __name__ == "__main__":
         .sem_filter(scenarios.RESUME_CASE_1_FILTER)
         .sem_join(
             scenarios.RESUME_CASE_1_JOIN,
-            '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective',
+            '/scratch/hojaeson_umass/kagglehub/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective',
             icp=True,
         )
     )
@@ -154,7 +175,7 @@ if __name__ == "__main__":
         .sem_filter(scenarios.RESUME_CASE_1_FILTER)
         .sem_join(
             scenarios.RESUME_CASE_1_JOIN,
-            '/home/hojaeson_umass_edu/.cache/kagglehub/datasets/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective',
+            '/scratch/hojaeson_umass/kagglehub/kshitizregmi/jobs-and-job-description/versions/2/job_title_des_txt_50_ultra_selective',
             icp=True,
             icp_top_k=30
         )

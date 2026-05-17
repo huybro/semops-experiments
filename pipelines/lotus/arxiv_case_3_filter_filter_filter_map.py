@@ -15,7 +15,10 @@ from data_utils import write_csv, load_arxiv
 from pipelines.cli_utils import parse_vllm_args
 
 project = 'lotus'
+FILTER_MAX_TOKENS = 8
 MAX_TOKENS = 4096
+FREQUENCY_PENALTY = 0.5
+REPETITION_PENALTY = 1.3
 MODEL_NAME, VLLM_API_BASE = parse_vllm_args()
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -23,19 +26,21 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 _lotus_lm = LM(
     model=f"hosted_vllm/{MODEL_NAME}",
     api_base=VLLM_API_BASE,
-    max_tokens=MAX_TOKENS,
+    max_tokens=FILTER_MAX_TOKENS,
     temperature=0,
     top_p=1,
     seed=42,
+    frequency_penalty=FREQUENCY_PENALTY,
+    repetition_penalty=REPETITION_PENALTY,
 )
 lotus.settings.configure(lm=_lotus_lm)
 
 
 # Load Fever data
-df = load_arxiv("/home/hojaeson_umass_edu/.cache/kagglehub/datasets/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_1000")
+df = load_arxiv("/scratch/hojaeson_umass/kagglehub/spsayakpaul/arxiv-paper-abstracts/versions/2/arxiv_txt_1000")
 # df = df.iloc[:100]
 log = []
-params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42}
+params = {'log': log, 'max_tokens': FILTER_MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42, 'frequency_penalty': FREQUENCY_PENALTY, 'repetition_penalty': REPETITION_PENALTY}
 llm_intercepter.set_intercept(**params)
 
 t0 = time.time()
@@ -46,6 +51,21 @@ df = df.sem_filter(scenarios.ARXIV_CASE_3_FILTER_2)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 df = df.sem_filter(scenarios.ARXIV_CASE_3_FILTER_3)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
+
+_lotus_lm = LM(
+    model=f"hosted_vllm/{MODEL_NAME}",
+    api_base=VLLM_API_BASE,
+    max_tokens=MAX_TOKENS,
+    temperature=0,
+    top_p=1,
+    seed=42,
+    frequency_penalty=FREQUENCY_PENALTY,
+    repetition_penalty=REPETITION_PENALTY,
+)
+lotus.settings.configure(lm=_lotus_lm)
+params = {'log': log, 'max_tokens': MAX_TOKENS, 'tokenizer': tokenizer, 'seed': 42, 'frequency_penalty': FREQUENCY_PENALTY, 'repetition_penalty': REPETITION_PENALTY}
+llm_intercepter.set_intercept(**params)
+
 df = df.sem_map(scenarios.ARXIV_CASE_3_MAP)
 print(f"  LOTUS: {len(df)}/{input_len} passed ({time.time() - t0:.1f}s)")
 

@@ -22,7 +22,7 @@ project = "lotus"
 
 # -- LOTUS --
 t0 = time.time()
-joined_df = load_enron("projects/palimpzest/testdata/enron-eval")
+joined_df = load_enron("/scratch/hojaeson_umass/enron-eval-number")
 logger.clear()
 df_filter1 = joined_df.sem_filter(FILTER_ENRON_FRAUD)
 df_filter2 = df_filter1.sem_filter(FILTER_ENRON_NOT_NEWS)

@@ -1,0 +1,10 @@
+Loaded 607 abstract from /home/hojaeson_umass/projects/semops-experiments/pipelines/lotus/../../data/contract-nli/contracts
+Loaded 17 abstract from /home/hojaeson_umass/projects/semops-experiments/pipelines/lotus/../../data/contract-nli/hypotheses
+Filtering:   0%|           0/607 LM calls [00:00<?, ?it/s]Filtering: 100%|██████████ 607/607 LM calls [05:50<00:00,  1.73it/s]Filtering: 100%|██████████ 607/607 LM calls [05:50<00:00,  1.73it/s]
+/home/hojaeson_umass/projects/semops-experiments/pipelines/lotus/../../projects/lotus/lotus/models/lm.py:474: UserWarning: No pricing information available for model hosted_vllm/meta-llama/Llama-3.3-70B-Instruct. 
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+Join comparisons:   0%|           0/10319 LM Calls [00:00<?, ?it/s]/home/hojaeson_umass/projects/semops-experiments/pipelines/lotus/../../projects/lotus/lotus/models/lm.py:474: UserWarning: No pricing information available for model hosted_vllm/meta-llama/Llama-3.3-70B-Instruct. 
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+Join comparisons: 100%|██████████ 10319/10319 LM Calls [09:59<00:00, 17.21it/s]Join comparisons: 100%|██████████ 10319/10319 LM Calls [09:59<00:00, 17.21it/s]
+  LOTUS: join kept 6533 contract/hypothesis pairs (950.0s)
+Mapping:   0%|           0/6533 LM calls [00:00<?, ?it/s]

@@ -6,8 +6,7 @@ import pandas as pd
 import lotus
 from lotus.dtype_extensions import ImageDtype
 from lotus.types import ReasoningStrategy, SerializationFormat
-from . import prompt_utils
-from .base import OpName
+
 
 def cot_formatter(reasoning, answer):
     return f"""Reasoning:\n{reasoning}\n\nAnswer: {answer}"""
@@ -94,13 +93,17 @@ def filter_formatter(
     cot_reasoning: list[str] | None = None,
     strategy: ReasoningStrategy | None = None,
     reasoning_instructions: str = "",
+    system_prompt: str | None = None,
+    output_tokens: tuple[str, str] = ("True", "False"),
 ) -> list[dict[str, str]]:
-    answer_instructions = "The answer should be either True or False"
+    positive_token, negative_token = output_tokens
+    answer_instructions = f"The answer should be either {positive_token} or {negative_token}"
 
-    sys_instruction = """The user will provide a claim and some relevant context.
+    default_sys_instruction = """The user will provide a claim and some relevant context.
     Your job is to determine whether the claim is true for the given context.
      """
 
+    sys_instruction = system_prompt or default_sys_instruction
     if strategy == ReasoningStrategy.COT:
         sys_instruction += cot_prompt_formatter(
             reasoning_instructions=reasoning_instructions, answer_instructions=answer_instructions
@@ -109,7 +112,7 @@ def filter_formatter(
         sys_instruction += cot_prompt_formatter(
             reasoning_instructions=reasoning_instructions, answer_instructions=answer_instructions
         )
-    else:
+    elif not system_prompt:
         sys_instruction += non_cot_prompt_formatter(answer_instructions=answer_instructions)
 
     messages = [
@@ -130,16 +133,20 @@ def filter_formatter(
         for idx in range(len(examples_multimodal_data)):
             ex_multimodal_data = examples_multimodal_data[idx]
             ex_ans = examples_answer[idx]
+            if isinstance(ex_ans, str):
+                ex_ans_token = ex_ans.lower() == positive_token.lower()
+            elif isinstance(ex_ans, bool):
+                ex_ans_token = positive_token if ex_ans else negative_token
+            else:
+                raise ValueError(f"Invalid example answer type: {type(ex_ans)}")
             content = ""
 
-            # if cot reasoning is provided, use it. Otherwise, supply a default
-            # reasoning as filler if the user wants cot reasoning
             if cot_reasoning:
-                content = cot_formatter(cot_reasoning[idx], str(ex_ans))
+                content = cot_formatter(cot_reasoning[idx], ex_ans_token)
             elif strategy == ReasoningStrategy.COT:
-                content = cot_formatter("Reasoning omitted", str(ex_ans))
+                content = cot_formatter("Reasoning omitted", ex_ans_token)
             else:
-                content = answer_only_formatter(str(ex_ans))
+                content = answer_only_formatter(ex_ans_token)
 
             messages.extend(
                 [
@@ -155,50 +162,6 @@ def filter_formatter(
         messages.append(user_message_formatter(multimodal_data, user_instruction))
     else:
         messages.append(user_message_formatter(multimodal_data, f"Claim: {user_instruction}"))
-    return messages
-
-
-
-def filter_formatter_custom(
-    multimodal_data: dict[str, Any],
-    user_instruction: str,
-) -> list[dict[str, str]]:
-    data_prompt = prompt_utils.get_data_prompt(multimodal_data["text"])
-    messages = prompt_utils.get_prompt(user_instruction, data_prompt)
-    return messages
-
-
-def join_formatter_custom(
-    multimodal_data: dict[str, Any],
-    user_instruction: str,
-) -> list[dict[str, str]]:
-    right_text = multimodal_data.get("right_text")
-
-    if right_text is not None:
-        data_prompt = prompt_utils.get_data_prompt(
-            multimodal_data["text"],
-            [right_text],
-        )
-    else:
-        data_prompt = prompt_utils.get_data_prompt(multimodal_data["text"])
-
-    messages = prompt_utils.get_prompt(
-        user_instruction,
-        data_prompt,
-        op=OpName.SEM_JOIN,
-    )
-    return messages
-
-
-def map_formatter_custom(
-    multimodal_data: dict[str, Any],
-    user_instruction: str,
-) -> list[dict[str, str]]:
-    """Build map messages. ``user_instruction`` should be the nle2str-formatted string (placeholders removed)."""
-    data_prompt = prompt_utils.get_data_prompt(multimodal_data["text"])
-    messages = prompt_utils.get_prompt(
-        user_instruction, data_prompt, op=OpName.SEM_MAP
-    )
     return messages
 
 
@@ -253,110 +216,6 @@ def map_formatter_zs_cot(
 
     messages.append(user_message_formatter(multimodal_data, f"Instruction: {user_instruction}"))
     return messages
-
-
-
-def map_formatter_2(
-    model: lotus.models.LM,
-    multimodal_data: dict[str, Any],
-    user_instruction: str,
-    examples_multimodal_data: list[dict[str, Any]] | None = None,
-    examples_answer: list[str] | None = None,
-    cot_reasoning: list[str] | None = None,
-    strategy: ReasoningStrategy | str | None = None,
-    system_prompt: str | None = None,
-) -> list[dict[str, str]]: 
-    
-    
-    sys_instruction = "You are a helpful assistant for executing semantic operators.\n" + \
-    "You will be given data and an operation description.\n" + \
-    "Apply the operation to the provided data exactly as specified and return only the required result.\n"
-    
-    messages = [
-        {"role": "system", "content": sys_instruction},
-    ]
-
-    if "[Document]" not in multimodal_data['text']:
-        
-        operation = (
-            "You  are presented with a context and a mapping instruction.\n"
-            "Apply the instruction to the context and produce the mapped output.\n"
-            "The output must strictly follow the instruction and contain no extra commentary.\n"
-            f"Map Instruction:{user_instruction}\n"
-        )
-
-        user_messages = [
-            {
-                "role": "user",
-                "type": "text",
-                "content": (
-                    "CONTEXT:\n"
-                    "  {\n"
-                    f"    \"text\": {multimodal_data['text']}\n"
-                    "  }\n"
-                    "\n\n"
-                    "TASK:\n"
-                    f"{operation}\n\n"
-                    "ANSWER:\n"
-                ),
-            }
-        ]
-
-        
-    else:
-        multimodal_data['text'].replace("[Document]", "")
-        user_messages = [
-            {
-                "role": "user",
-                "type": "text",
-                "content": multimodal_data['text']
-            }
-        ]
-
-        
-    messages.extend(user_messages)
-
-    return messages
-    # if examples_multimodal_data:
-    #     assert examples_answer is not None
-    #     assert isinstance(examples_multimodal_data, list) and isinstance(examples_answer, list)
-    #     assert len(examples_multimodal_data) == len(examples_answer)
-
-    #     if cot_reasoning:
-    #         # users don't have to provide cot reasoning examples
-    #         # but if they do, the number of examples must match
-    #         assert isinstance(cot_reasoning, list)
-    #         assert len(examples_multimodal_data) == len(examples_answer) == len(cot_reasoning)
-
-    #     for idx in range(len(examples_multimodal_data)):
-    #         ex_multimodal_data = examples_multimodal_data[idx]
-    #         ex_ans = examples_answer[idx]
-    #         content = ""
-
-    #         # if cot reasoning is provided, use it. Otherwise, supply a default
-    #         # reasoning as filler if the user wants cot reasoning
-    #         if cot_reasoning:
-    #             content = cot_formatter(cot_reasoning[idx], str(ex_ans))
-    #         elif strategy == ReasoningStrategy.COT:
-    #             content = cot_formatter("Reasoning omitted", str(ex_ans))
-    #         else:
-    #             content = answer_only_formatter(str(ex_ans))
-
-    #         messages.extend(
-    #             [
-    #                 user_message_formatter(ex_multimodal_data, f"Claim: {user_instruction}"),
-    #                 {
-    #                     "role": "assistant",
-    #                     "content": content,
-    #                 },
-    #             ]
-    #         )
-    # if strategy == ReasoningStrategy.ZS_COT and model.is_deepseek():
-    #     user_instruction = f"Claim: {user_instruction}\n\n{deepseek_cot_formatter()}"
-    #     messages.append(user_message_formatter(multimodal_data, user_instruction))
-    # else:
-    #     messages.append(user_message_formatter(multimodal_data, f"Claim: {user_instruction}"))
-
 
 
 def map_formatter(
@@ -474,10 +333,8 @@ def extract_formatter(
 def df2text(df: pd.DataFrame, cols: list[str]) -> list[str]:
     """Formats the given DataFrame into a string containing info from cols."""
 
-    # def custom_format_row(x: pd.Series, cols: list[str]) -> str:
-    #     return "".join([f"[{cols[i].capitalize()}]: «{x[cols[i]]}»\n" for i in range(len(cols))])
     def custom_format_row(x: pd.Series, cols: list[str]) -> str:
-        return "".join([f"{x[cols[i]]}" for i in range(len(cols))])
+        return "".join([f"[{cols[i].capitalize()}]: «{x[cols[i]]}»\n" for i in range(len(cols))])
 
     def clean_and_escape_column_name(column_name: str) -> str:
         clean_name = re.sub(r"[^\w]", "", column_name)  # Remove spaces and special characters
@@ -543,9 +400,7 @@ def merge_multimodal_info(first: list[dict[str, Any]], second: list[dict[str, An
     """
     return [
         {
-            "text": first[i]["text"],
-            "right_text": second[j]["text"],
-            "merged_text": f"{first[i]['text']}\n{second[j]['text']}"
+            "text": f"{first[i]['text']}\n{second[j]['text']}"
             if first[i]["text"] != "" and second[j]["text"] != ""
             else first[i]["text"] + second[j]["text"],
             "image": {**first[i]["image"], **second[j]["image"]},
